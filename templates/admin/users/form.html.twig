@@ -1,0 +1,310 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ isEdit ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_users_index') }}">Utilisateurs</a></li>
+        <li class="breadcrumb-item active">{{ isEdit ? 'Modifier' : 'Nouvel utilisateur' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-md-8">
+        <form method="POST" class="needs-validation" novalidate>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ isEdit ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="first_name" class="form-label">Prénom <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ user.firstName ?? '' }}" required>
+                                <div class="invalid-feedback">Veuillez saisir le prénom.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="last_name" class="form-label">Nom <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ user.lastName ?? '' }}" required>
+                                <div class="invalid-feedback">Veuillez saisir le nom.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Nom d'utilisateur <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ user.username ?? '' }}" required>
+                                <div class="invalid-feedback">Veuillez saisir un nom d'utilisateur.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email ?? '' }}" required>
+                                <div class="invalid-feedback">Veuillez saisir une adresse email valide.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Biographie</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3">{{ user.bio ?? '' }}</textarea>
+                        <div class="form-text">Description courte de l'utilisateur (optionnel).</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="website" class="form-label">Site web</label>
+                        <input type="url" class="form-control" id="website" name="website" 
+                               value="{{ user.website ?? '' }}" placeholder="https://">
+                        <div class="form-text">URL du site web personnel (optionnel).</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mot de passe -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-key me-1"></i> {{ isEdit ? 'Changer le mot de passe' : 'Mot de passe' }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">
+                                    {{ isEdit ? 'Nouveau mot de passe' : 'Mot de passe' }}
+                                    {% if not isEdit %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       {{ not isEdit ? 'required' : '' }} minlength="6">
+                                <div class="form-text">{{ isEdit ? 'Laissez vide pour ne pas changer' : 'Au moins 6 caractères' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password_confirm" class="form-label">
+                                    Confirmer le mot de passe
+                                    {% if not isEdit %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                <input type="password" class="form-control" id="password_confirm" name="password_confirm" 
+                                       {{ not isEdit ? 'required' : '' }} minlength="6">
+                                <div class="form-text">Ressaisissez le mot de passe pour confirmation</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rôles et permissions -->
+            {% if canEditRoles %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-user-shield me-1"></i> Rôles et permissions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="roles" class="form-label">Rôle principal</label>
+                        <select class="form-select" id="roles" name="roles">
+                            {% for roleValue, roleLabel in availableRoles %}
+                                <option value="{{ roleValue }}" 
+                                        {{ user.hasRole(roleValue) ? 'selected' : '' }}>
+                                    {{ roleLabel }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            <strong>Abonné</strong> : Lecture seule<br>
+                            <strong>Contributeur</strong> : Écriture d'articles en brouillon<br>
+                            <strong>Auteur</strong> : Gestion de ses propres articles<br>
+                            <strong>Éditeur</strong> : Gestion de tous les contenus<br>
+                            <strong>Administrateur</strong> : Accès complet au système
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Statut -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-toggle-on me-1"></i> Statut du compte</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                               {{ user.isActive ?? true ? 'checked' : '' }}>
+                        <label class="form-check-label" for="is_active">
+                            Compte actif
+                        </label>
+                        <div class="form-text">Les comptes inactifs ne peuvent pas se connecter.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ path('admin_users_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {{ isEdit ? 'Modifier' : 'Créer' }}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Avatar -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-user-circle me-1"></i> Avatar</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="avatar-lg bg-primary rounded-circle d-inline-flex align-items-center justify-content-center text-white mb-3">
+                    {{ (user.firstName ?? 'N')|slice(0,1)|upper }}{{ (user.lastName ?? 'U')|slice(0,1)|upper }}
+                </div>
+                <p class="text-muted">Les avatars personnalisés seront disponibles dans une future version.</p>
+            </div>
+        </div>
+        
+        <!-- Informations -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> Informations</h6>
+            </div>
+            <div class="card-body">
+                {% if isEdit %}
+                <p class="mb-2">
+                    <strong>Rôle actuel :</strong>
+                    {% set highestRole = user.highestRole %}
+                    <span class="badge 
+                        {% if highestRole == 'ROLE_ADMIN' %}bg-danger
+                        {% elseif highestRole == 'ROLE_EDITOR' %}bg-warning
+                        {% elseif highestRole == 'ROLE_AUTHOR' %}bg-info
+                        {% elseif highestRole == 'ROLE_CONTRIBUTOR' %}bg-secondary
+                        {% else %}bg-light text-dark{% endif %}">
+                        {{ availableRoles[highestRole] ?? 'Utilisateur' }}
+                    </span>
+                </p>
+                <p class="mb-2">
+                    <strong>Statut :</strong>
+                    {% if user.isActive %}
+                        <span class="badge bg-success">Actif</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactif</span>
+                    {% endif %}
+                </p>
+                <hr>
+                <p class="mb-1"><strong>Inscrit le :</strong></p>
+                <small class="text-muted">{{ user.createdAt|date('d/m/Y H:i') }}</small>
+                {% if user.lastLoginAt %}
+                <p class="mb-1 mt-2"><strong>Dernière connexion :</strong></p>
+                <small class="text-muted">{{ user.lastLoginAt|date('d/m/Y H:i') }}</small>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">Nouvel utilisateur - les informations apparaitront après la création.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if isEdit %}
+        <!-- Statistiques -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-1"></i> Activité</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Articles :</strong> 
+                    <span class="badge bg-primary">{{ user.posts|length }}</span>
+                </p>
+                <p class="mb-2">
+                    <strong>Pages :</strong> 
+                    <span class="badge bg-secondary">{{ user.pages|length }}</span>
+                </p>
+                <p class="mb-2">
+                    <strong>Commentaires :</strong> 
+                    <span class="badge bg-info">{{ user.comments|length }}</span>
+                </p>
+                <p class="mb-0">
+                    <strong>Médias :</strong> 
+                    <span class="badge bg-warning">{{ user.medias|length }}</span>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Aide -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-question-circle me-1"></i> Aide</h6>
+            </div>
+            <div class="card-body">
+                <h6>Rôles utilisateur</h6>
+                <p class="small text-muted mb-3">Chaque rôle accorde des permissions spécifiques. L'administrateur a tous les droits.</p>
+                
+                <h6>Sécurité</h6>
+                <p class="small text-muted mb-0">Utilisez des mots de passe forts et désactivez les comptes inutilisés.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-lg {
+    width: 80px;
+    height: 80px;
+    font-size: 24px;
+}
+</style>
+
+<script>
+// Validation du formulaire
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                // Vérifier la correspondance des mots de passe
+                const password = document.getElementById('password');
+                const passwordConfirm = document.getElementById('password_confirm');
+                
+                if (password.value !== passwordConfirm.value) {
+                    passwordConfirm.setCustomValidity('Les mots de passe ne correspondent pas');
+                } else {
+                    passwordConfirm.setCustomValidity('');
+                }
+                
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Vérification en temps réel des mots de passe
+document.getElementById('password_confirm').addEventListener('input', function() {
+    const password = document.getElementById('password');
+    if (this.value !== password.value) {
+        this.setCustomValidity('Les mots de passe ne correspondent pas');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+</script>
+{% endblock %}

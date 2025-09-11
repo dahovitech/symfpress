@@ -1,0 +1,256 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ isEdit ? 'Modifier la catégorie' : 'Nouvelle catégorie' }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_categories_index') }}">Catégories</a></li>
+        <li class="breadcrumb-item active">{{ isEdit ? 'Modifier' : 'Nouvelle catégorie' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-md-8">
+        <form method="POST" class="needs-validation" novalidate>
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ isEdit ? 'Modifier la catégorie' : 'Nouvelle catégorie' }}</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-language me-1"></i> {{ currentLanguage.name }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% for language in availableLanguages %}
+                                <li>
+                                    <a class="dropdown-item {{ language == currentLanguage ? 'active' : '' }}" 
+                                       href="{{ isEdit ? path('admin_categories_edit', {'id': category.id, 'language': language.code}) : path('admin_categories_new', {'language': language.code}) }}">
+                                        {{ language.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% set translation = category.getTranslationForLanguage(currentLanguage) %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nom <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ translation ? translation.name : '' }}" required>
+                        <div class="invalid-feedback">Veuillez saisir un nom de catégorie.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text" class="form-control" id="slug" name="slug" 
+                               value="{{ category.slug ?? '' }}" 
+                               {{ isEdit ? 'readonly' : '' }}>
+                        <div class="form-text">Le slug sera généré automatiquement si laissé vide.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ translation ? translation.description : '' }}</textarea>
+                        <div class="form-text">Description de la catégorie (optionnel).</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paramètres avancés -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-cog me-1"></i> Paramètres avancés</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="parent_id" class="form-label">Catégorie parente</label>
+                                <select class="form-select" id="parent_id" name="parent_id">
+                                    <option value="">Aucune (catégorie racine)</option>
+                                    {% for parent in availableParents %}
+                                        {% set parentTranslation = parent.getTranslationForLanguage(currentLanguage) %}
+                                        <option value="{{ parent.id }}" 
+                                                {{ category.parent and parent.id == category.parent.id ? 'selected' : '' }}>
+                                            {% for i in 0..parent.level %}
+                                                {% if i > 0 %}—{% endif %}
+                                            {% endfor %}
+                                            {{ parentTranslation ? parentTranslation.name : 'Catégorie #' ~ parent.id }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="menu_order" class="form-label">Ordre d'affichage</label>
+                                <input type="number" class="form-control" id="menu_order" name="menu_order" 
+                                       value="{{ category.menuOrder ?? 0 }}" min="0">
+                                <div class="form-text">Position dans les listes (0 = premier).</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="color" class="form-label">Couleur</label>
+                                <input type="color" class="form-control form-control-color" id="color" name="color" 
+                                       value="{{ category.color ?? '#007bff' }}">
+                                <div class="form-text">Couleur associée à la catégorie.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="icon" class="form-label">Icône</label>
+                                <input type="text" class="form-control" id="icon" name="icon" 
+                                       value="{{ category.icon ?? '' }}" 
+                                       placeholder="fas fa-folder">
+                                <div class="form-text">Classe CSS FontAwesome (optionnel).</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SEO -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-search me-1"></i> Référencement SEO</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="meta_title" class="form-label">Titre SEO</label>
+                        <input type="text" class="form-control" id="meta_title" name="meta_title" 
+                               value="{{ translation ? translation.metaTitle : '' }}" maxlength="60">
+                        <div class="form-text">Titre affiché dans les résultats de recherche (60 caractères max)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="meta_description" class="form-label">Description SEO</label>
+                        <textarea class="form-control" id="meta_description" name="meta_description" rows="2" maxlength="160">{{ translation ? translation.metaDescription : '' }}</textarea>
+                        <div class="form-text">Description affichée dans les résultats de recherche (160 caractères max)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ path('admin_categories_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {{ isEdit ? 'Modifier' : 'Créer' }}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Statut -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> Informations</h6>
+            </div>
+            <div class="card-body">
+                {% if isEdit %}
+                <p class="mb-2"><strong>Articles :</strong> {{ category.postCount }}</p>
+                <p class="mb-2"><strong>Créée le :</strong> {{ category.createdAt|date('d/m/Y H:i') }}</p>
+                {% if category.updatedAt %}
+                <p class="mb-0"><strong>Modifiée le :</strong> {{ category.updatedAt|date('d/m/Y H:i') }}</p>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">Nouvelle catégorie - les informations apparaitront après la création.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Hiérarchie -->
+        {% if isEdit and category.parent %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-sitemap me-1"></i> Hiérarchie</h6>
+            </div>
+            <div class="card-body">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-sm">
+                        {% for ancestor in category.breadcrumb %}
+                            {% set ancestorTranslation = ancestor.getTranslationForLanguage(currentLanguage) %}
+                            <li class="breadcrumb-item {{ loop.last ? 'active' : '' }}">
+                                {% if not loop.last %}
+                                    <a href="{{ path('admin_categories_edit', {'id': ancestor.id}) }}">
+                                        {{ ancestorTranslation ? ancestorTranslation.name : 'Catégorie #' ~ ancestor.id }}
+                                    </a>
+                                {% else %}
+                                    {{ ancestorTranslation ? ancestorTranslation.name : 'Catégorie #' ~ ancestor.id }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Aide -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-question-circle me-1"></i> Aide</h6>
+            </div>
+            <div class="card-body">
+                <h6>Catégories vs Tags</h6>
+                <p class="small text-muted mb-3">Les catégories sont hiérarchiques et permettent d'organiser les articles, contrairement aux tags qui sont des mots-clés libres.</p>
+                
+                <h6>Hiérarchie</h6>
+                <p class="small text-muted mb-3">Une catégorie peut avoir une catégorie parente pour créer une arborescence.</p>
+                
+                <h6>SEO</h6>
+                <p class="small text-muted mb-0">Optimisez le titre et la description pour améliorer le référencement.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validation du formulaire
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Génération automatique du slug
+document.getElementById('name').addEventListener('input', function() {
+    const slugField = document.getElementById('slug');
+    if (!slugField.readOnly && slugField.value === '') {
+        const slug = this.value
+            .toLowerCase()
+            .replace(/[àáâãäå]/g, 'a')
+            .replace(/[èéêë]/g, 'e')
+            .replace(/[ìíîï]/g, 'i')
+            .replace(/[òóôõö]/g, 'o')
+            .replace(/[ùúûü]/g, 'u')
+            .replace(/[ç]/g, 'c')
+            .replace(/[ñ]/g, 'n')
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        slugField.value = slug;
+    }
+});
+</script>
+{% endblock %}

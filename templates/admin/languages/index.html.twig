@@ -1,0 +1,163 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Gestion des langues{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active">Langues</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-language me-2"></i>
+        Gestion des langues
+    </h2>
+    <a href="{{ path('admin_languages_new') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>
+        Ajouter une langue
+    </a>
+</div>
+
+{% if languages is empty %}
+    <div class="alert alert-info">
+        <h5><i class="fas fa-info-circle me-2"></i>Aucune langue configurée</h5>
+        <p class="mb-0">Ajoutez votre première langue pour commencer à utiliser le système multilingue de SymfPress.</p>
+    </div>
+{% else %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Langues disponibles ({{ languages|length }})</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Nom</th>
+                            <th>Statut</th>
+                            <th>Par défaut</th>
+                            <th>Contenu</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for language in languages %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">{{ language.code|upper }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ language.name }}</strong>
+                                    {% if language == currentLanguage %}
+                                        <small class="text-muted">(actuelle)</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if language.isActive %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Active
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-pause me-1"></i>Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if language.isDefault %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-star me-1"></i>Défaut
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        <i class="fas fa-file-alt me-1"></i>
+                                        {# TODO: Afficher le nombre de contenus traduits #}
+                                        Contenu disponible
+                                    </small>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ path('admin_languages_edit', {'id': language.id}) }}" 
+                                           class="btn btn-outline-primary btn-sm" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        {% if not language.isDefault %}
+                                            <form method="POST" action="{{ path('admin_languages_set_default', {'id': language.id}) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Définir {{ language.name }} comme langue par défaut ?')">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('set_default_' ~ language.id) }}">
+                                                <button type="submit" class="btn btn-outline-warning btn-sm" title="Définir par défaut">
+                                                    <i class="fas fa-star"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        
+                                        {% if not language.isDefault %}
+                                            <form method="POST" action="{{ path('admin_languages_toggle_active', {'id': language.id}) }}" 
+                                                  class="d-inline">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('toggle_active_' ~ language.id) }}">
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm" 
+                                                        title="{{ language.isActive ? 'Désactiver' : 'Activer' }}">
+                                                    <i class="fas fa-{{ language.isActive ? 'pause' : 'play' }}"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        
+                                        {% if not language.isDefault %}
+                                            <form method="POST" action="{{ path('admin_languages_delete', {'id': language.id}) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette langue ?')">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete_language_' ~ language.id) }}">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Supprimer">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-4">
+        <h6><i class="fas fa-lightbulb me-2"></i>Conseils d'utilisation</h6>
+        <ul class="mb-0">
+            <li><strong>Langue par défaut :</strong> La langue principale de votre site, utilisée quand aucune autre langue n'est spécifiée.</li>
+            <li><strong>Langues actives :</strong> Seules les langues actives sont disponibles pour la traduction du contenu.</li>
+            <li><strong>Suppression :</strong> Vous ne pouvez pas supprimer une langue qui contient du contenu traduit.</li>
+            <li><strong>Codes de langue :</strong> Utilisez les codes ISO 639-1 (fr, en, es, de, etc.).</li>
+        </ul>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // Auto-submit des formulaires pour les actions rapides
+        document.addEventListener('DOMContentLoaded', function() {
+            // Confirmation pour les actions sensibles
+            document.querySelectorAll('form[onsubmit*="confirm"]').forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    const confirmMessage = form.getAttribute('onsubmit').match(/confirm\('(.+?)'\)/);
+                    if (confirmMessage && !confirm(confirmMessage[1])) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

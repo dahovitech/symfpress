@@ -1,0 +1,72 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Gestion des Extensions - SymfPress{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-puzzle-piece"></i> Gestion des Extensions</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-plug fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Plugins</h5>
+                <p class="card-text">Étendez les fonctionnalités de votre site avec des plugins personnalisés.</p>
+                <p class="text-muted">{{ pluginsCount }} plugin(s) disponible(s)</p>
+                <a href="{{ path('admin_plugins_index') }}" class="btn btn-primary">
+                    <i class="fas fa-cogs"></i> Gérer les Plugins
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-palette fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Thèmes</h5>
+                <p class="card-text">Personnalisez l'apparence de votre site avec des thèmes créatifs.</p>
+                <p class="text-muted">{{ themesCount }} thème(s) disponible(s)</p>
+                <a href="{{ path('admin_themes_index') }}" class="btn btn-success">
+                    <i class="fas fa-paint-brush"></i> Gérer les Thèmes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> À propos de l'architecture d'extensibilité</h5>
+            </div>
+            <div class="card-body">
+                <p>SymfPress utilise une architecture d'extensibilité inspirée de WordPress mais adaptée à Symfony :</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-hook"></i> Système de Hooks</h6>
+                        <ul>
+                            <li><strong>Actions :</strong> Exécutent du code à des moments spécifiques</li>
+                            <li><strong>Filtres :</strong> Modifient des données avant affichage</li>
+                            <li><strong>Priorités :</strong> Contrôlent l'ordre d'exécution</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-shield-alt"></i> Sécurité</h6>
+                        <ul>
+                            <li><strong>Validation :</strong> Vérification des métadonnées</li>
+                            <li><strong>Sandboxing :</strong> Isolation des extensions</li>
+                            <li><strong>Permissions :</strong> Contrôle d'accès granulaire</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

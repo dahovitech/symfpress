@@ -1,0 +1,333 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Gestion des Commentaires{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <!-- En-tête avec statistiques -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">📝 Gestion des Commentaires</h1>
+        <div class="badge-group">
+            <span class="badge bg-primary">Total : {{ statusCounts.all ?? 0 }}</span>
+            <span class="badge bg-warning">En attente : {{ statusCounts.pending ?? 0 }}</span>
+            <span class="badge bg-success">Approuvés : {{ statusCounts.approved ?? 0 }}</span>
+            <span class="badge bg-danger">Spam : {{ statusCounts.spam ?? 0 }}</span>
+        </div>
+    </div>
+
+    <!-- Filtres et recherche -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Statut</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="all" {{ currentStatus == 'all' ? 'selected' : '' }}>Tous ({{ statusCounts.all ?? 0 }})</option>
+                        <option value="pending" {{ currentStatus == 'pending' ? 'selected' : '' }}>En attente ({{ statusCounts.pending ?? 0 }})</option>
+                        <option value="approved" {{ currentStatus == 'approved' ? 'selected' : '' }}>Approuvés ({{ statusCounts.approved ?? 0 }})</option>
+                        <option value="spam" {{ currentStatus == 'spam' ? 'selected' : '' }}>Spam ({{ statusCounts.spam ?? 0 }})</option>
+                        <option value="trash" {{ currentStatus == 'trash' ? 'selected' : '' }}>Corbeille ({{ statusCounts.trash ?? 0 }})</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Rechercher</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Recherche par contenu, auteur, email ou titre..." value="{{ search }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">🔍 Rechercher</button>
+                    <a href="{{ path('admin_comments_index') }}" class="btn btn-outline-secondary">Réinitialiser</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if comments is empty %}
+        <div class="alert alert-info text-center">
+            <h4>Aucun commentaire trouvé</h4>
+            <p class="mb-0">{% if currentStatus != 'all' or search %}Essayez de modifier vos filtres de recherche.{% else %}Aucun commentaire n'a encore été soumis.{% endif %}</p>
+        </div>
+    {% else %}
+        <!-- Actions en masse -->
+        <form id="bulk-form" method="POST" action="{{ path('admin_comments_bulk_actions') }}">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="select-all">
+                                <label class="form-check-label" for="select-all">
+                                    <strong>Sélectionner tout</strong>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="d-flex gap-2 justify-content-end">
+                                <select name="action" class="form-select" style="width: auto;" required>
+                                    <option value="">Choisir une action...</option>
+                                    <option value="approve">✅ Approuver</option>
+                                    <option value="reject">❌ Rejeter</option>
+                                    <option value="spam">🚫 Marquer comme spam</option>
+                                    <option value="restore">🔄 Restaurer</option>
+                                    <option value="delete">🗑️ Supprimer définitivement</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmer cette action sur les commentaires sélectionnés ?')">
+                                    Appliquer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Liste des commentaires -->
+            <div class="comments-list">
+                {% for comment in comments %}
+                <div class="card mb-3 comment-card" data-comment-id="{{ comment.id }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Checkbox et avatar -->
+                            <div class="col-auto">
+                                <div class="d-flex flex-column align-items-center">
+                                    <input class="form-check-input comment-checkbox" type="checkbox" 
+                                           name="selected_comments[]" value="{{ comment.id }}">
+                                    <div class="avatar mt-2">
+                                        {% if comment.author %}
+                                            <div class="avatar-circle bg-primary">{{ comment.authorName|first|upper }}</div>
+                                        {% else %}
+                                            <div class="avatar-circle bg-secondary">👤</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Contenu du commentaire -->
+                            <div class="col">
+                                <!-- En-tête du commentaire -->
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <strong>{{ comment.authorName ?? 'Anonyme' }}</strong>
+                                            {% if comment.authorEmail %}
+                                                <small class="text-muted">&lt;{{ comment.authorEmail }}&gt;</small>
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted">
+                                            📅 {{ comment.createdAt|date('d/m/Y H:i') }}
+                                            {% if comment.isReply %}
+                                                | 💬 Réponse (niveau {{ comment.level }})
+                                            {% endif %}
+                                            {% if comment.authorIp %}
+                                                | 🌐 IP: {{ comment.authorIp }}
+                                            {% endif %}
+                                        </small>
+                                        <br>
+                                        <small class="text-muted">
+                                            Sur : 
+                                            {% if comment.post %}
+                                                📄 <strong>{{ comment.contentTitle }}</strong> (Article)
+                                            {% elseif comment.page %}
+                                                📃 <strong>{{ comment.contentTitle }}</strong> (Page)
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    
+                                    <!-- Badge de statut -->
+                                    <div>
+                                        {% set statusClass = {
+                                            'pending': 'warning',
+                                            'approved': 'success', 
+                                            'spam': 'danger',
+                                            'trash': 'dark'
+                                        } %}
+                                        {% set statusLabel = {
+                                            'pending': '⏳ En attente',
+                                            'approved': '✅ Approuvé', 
+                                            'spam': '🚫 Spam',
+                                            'trash': '🗑️ Corbeille'
+                                        } %}
+                                        <span class="badge bg-{{ statusClass[comment.status] }}">
+                                            {{ statusLabel[comment.status] }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Contenu -->
+                                <div class="comment-content mb-3">
+                                    <p class="mb-0">{{ comment.content|nl2br }}</p>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="comment-actions d-flex gap-1 flex-wrap">
+                                    <a href="{{ path('admin_comments_show', {id: comment.id}) }}" 
+                                       class="btn btn-sm btn-outline-info">👁️ Voir</a>
+                                    
+                                    {% if comment.status != 'approved' %}
+                                        <button type="button" class="btn btn-sm btn-outline-success action-btn" 
+                                                data-action="approve" data-id="{{ comment.id }}">
+                                            ✅ Approuver
+                                        </button>
+                                    {% endif %}
+                                    
+                                    {% if comment.status != 'trash' %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger action-btn" 
+                                                data-action="reject" data-id="{{ comment.id }}">
+                                            ❌ Rejeter
+                                        </button>
+                                    {% endif %}
+                                    
+                                    {% if comment.status != 'spam' %}
+                                        <button type="button" class="btn btn-sm btn-outline-warning action-btn" 
+                                                data-action="spam" data-id="{{ comment.id }}">
+                                            🚫 Spam
+                                        </button>
+                                    {% endif %}
+                                    
+                                    {% if comment.status in ['spam', 'trash'] %}
+                                        <button type="button" class="btn btn-sm btn-outline-primary action-btn" 
+                                                data-action="restore" data-id="{{ comment.id }}">
+                                            🔄 Restaurer
+                                        </button>
+                                    {% endif %}
+                                    
+                                    <a href="{{ path('admin_comments_reply', {id: comment.id}) }}" 
+                                       class="btn btn-sm btn-outline-secondary">💬 Répondre</a>
+                                    
+                                    <button type="button" class="btn btn-sm btn-outline-danger action-btn" 
+                                            data-action="delete" data-id="{{ comment.id }}" 
+                                            onclick="return confirm('Supprimer définitivement ce commentaire ?')">
+                                        🗑️ Supprimer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </form>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% set currentParams = app.request.query.all %}
+                
+                {% if pagination.page > 1 %}
+                    {% set currentParams = currentParams|merge({page: pagination.page - 1}) %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ path('admin_comments_index', currentParams) }}">Précédent</a>
+                    </li>
+                {% endif %}
+                
+                {% for p in range(max(1, pagination.page - 2), min(pagination.pages, pagination.page + 2)) %}
+                    {% set currentParams = currentParams|merge({page: p}) %}
+                    <li class="page-item {{ p == pagination.page ? 'active' : '' }}">
+                        <a class="page-link" href="{{ path('admin_comments_index', currentParams) }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+                
+                {% if pagination.page < pagination.pages %}
+                    {% set currentParams = currentParams|merge({page: pagination.page + 1}) %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ path('admin_comments_index', currentParams) }}">Suivant</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% endif %}
+</div>
+
+<!-- CSS personnalisé -->
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.comment-content {
+    max-height: 150px;
+    overflow-y: auto;
+    border-left: 3px solid #dee2e6;
+    padding-left: 15px;
+}
+
+.comment-card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.badge-group .badge {
+    margin-right: 0.5rem;
+}
+</style>
+
+<!-- JavaScript pour les actions AJAX -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sélection globale
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.comment-checkbox');
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+    
+    // Actions individuelles AJAX
+    document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = this.dataset.action;
+            const id = this.dataset.id;
+            const card = this.closest('.comment-card');
+            
+            // Créer un formulaire invisible pour CSRF
+            const form = document.createElement('form');
+            form.style.display = 'none';
+            form.method = 'POST';
+            form.action = `/admin/comments/${id}/${action}`;
+            
+            const token = document.createElement('input');
+            token.type = 'hidden';
+            token.name = '_token';
+            token.value = '{{ csrf_token("" ~ action ~ "_comment_" ~ (comment.id ?? "0")) }}';
+            
+            form.appendChild(token);
+            document.body.appendChild(form);
+            
+            // Soumettre et gérer la réponse
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new FormData(form)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.deleted) {
+                        card.remove();
+                    } else {
+                        // Recharger pour mettre à jour le statut
+                        location.reload();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                location.reload(); // Fallback
+            });
+            
+            document.body.removeChild(form);
+        });
+    });
+});
+</script>
+{% endblock %}

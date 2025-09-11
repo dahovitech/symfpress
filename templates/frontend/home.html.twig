@@ -1,0 +1,175 @@
+{% extends 'frontend/base.html.twig' %}
+
+{% block title %}Accueil - SymfPress{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-3">Bienvenue sur SymfPress</h1>
+                <p class="lead mb-4">Un système de gestion de contenu moderne et multilingue, conçu avec Symfony pour offrir performance et flexibilité.</p>
+                <a href="{{ path('frontend_posts') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-book-open me-2"></i>
+                    Découvrir nos articles
+                </a>
+            </div>
+            <div class="col-lg-4 text-center">
+                <i class="fas fa-blog" style="font-size: 8rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Articles à la une -->
+{% if featuredPosts is not empty %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="h3 mb-3">Articles à la une</h2>
+            <p class="text-muted">Découvrez nos contenus mis en avant</p>
+        </div>
+        
+        <div class="row">
+            {% for post in featuredPosts %}
+                {% set translation = post.getTranslationForLanguage(currentLanguage) %}
+                <div class="col-lg-4 mb-4">
+                    <div class="card post-card border-0 shadow-sm h-100">
+                        {% if post.featuredImage %}
+                            <img src="{{ post.featuredImage.url }}" class="card-img-top" alt="{{ translation.title }}" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-primary">Vedette</span>
+                                <small class="text-muted">{{ post.publishedAt|date('d/m/Y') }}</small>
+                            </div>
+                            <h5 class="card-title">{{ translation.title }}</h5>
+                            <p class="card-text text-muted flex-grow-1">
+                                {{ translation.excerpt|length > 120 ? translation.excerpt|slice(0, 120) ~ '...' : translation.excerpt }}
+                            </p>
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        {{ post.author.displayName }}
+                                    </small>
+                                    <a href="{{ path('frontend_post_show', {'slug': post.slug}) }}" class="btn btn-outline-primary btn-sm">
+                                        Lire plus
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Articles récents -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="h3 mb-1">Articles récents</h2>
+                <p class="text-muted mb-0">Nos dernières publications</p>
+            </div>
+            <a href="{{ path('frontend_posts') }}" class="btn btn-outline-primary">
+                Voir tous les articles
+                <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+        
+        {% if posts is empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-edit fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun article publié</h5>
+                <p class="text-muted">Revenez bientôt pour découvrir nos contenus !</p>
+            </div>
+        {% else %}
+            <div class="row">
+                {% for post in posts %}
+                    {% set translation = post.getTranslationForLanguage(currentLanguage) %}
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card post-card border-0 shadow-sm h-100">
+                            {% if post.featuredImage %}
+                                <img src="{{ post.featuredImage.url }}" class="card-img-top" alt="{{ translation.title }}" style="height: 200px; object-fit: cover;">
+                            {% endif %}
+                            <div class="card-body d-flex flex-column">
+                                <div class="post-meta mb-2">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ post.publishedAt|date('d/m/Y') }}
+                                    <i class="fas fa-eye ms-2 me-1"></i>
+                                    {{ post.viewCount }}
+                                </div>
+                                <h5 class="card-title">{{ translation.title }}</h5>
+                                <p class="card-text text-muted flex-grow-1">
+                                    {{ translation.excerpt|length > 120 ? translation.excerpt|slice(0, 120) ~ '...' : translation.excerpt }}
+                                </p>
+                                <div class="mt-auto">
+                                    <!-- Catégories -->
+                                    {% if post.categories is not empty %}
+                                        <div class="mb-2">
+                                            {% for category in post.categories|slice(0, 2) %}
+                                                <span class="badge bg-secondary me-1">
+                                                    {{ category.getDisplayName(currentLanguage) }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>
+                                            {{ post.author.displayName }}
+                                        </small>
+                                        <a href="{{ path('frontend_post_show', {'slug': post.slug}) }}" class="btn btn-outline-primary btn-sm">
+                                            Lire plus
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Catégories -->
+{% if categories is not empty %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="h3 mb-3">Catégories</h2>
+            <p class="text-muted">Explorez nos contenus par thème</p>
+        </div>
+        
+        <div class="row">
+            {% for category in categories|slice(0, 6) %}
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <a href="{{ path('frontend_category_show', {'slug': category.slug}) }}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                {% if category.icon %}
+                                    <i class="{{ category.icon }} fa-2x text-primary mb-3"></i>
+                                {% else %}
+                                    <i class="fas fa-folder fa-2x text-primary mb-3"></i>
+                                {% endif %}
+                                <h6 class="card-title">{{ category.getDisplayName(currentLanguage) }}</h6>
+                                <p class="card-text text-muted small">
+                                    {{ category.postCount }} article{{ category.postCount > 1 ? 's' : '' }}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

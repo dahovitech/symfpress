@@ -1,0 +1,300 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Détails du menu{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Administration</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_menus_index') }}">Menus</a></li>
+        <li class="breadcrumb-item active">{{ menu.getTranslationForLanguage(currentLanguage).title ?: 'Menu sans titre' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1 class="h3">{{ menu.getTranslationForLanguage(currentLanguage).title ?: 'Menu sans titre' }}</h1>
+        <div class="text-muted">
+            <small>Créé le {{ menu.createdAt|date('d/m/Y à H:i') }}</small>
+            {% if menu.updatedAt %}
+                <small> • Modifié le {{ menu.updatedAt|date('d/m/Y à H:i') }}</small>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="btn-group">
+        <a href="{{ path('admin_menus_edit', {id: menu.id}) }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Modifier
+        </a>
+        <a href="{{ path('admin_menus_index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Informations principales -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Informations principales</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Titre :</strong>
+                        <p>{{ menu.getTranslationForLanguage(currentLanguage).title ?: 'Aucun titre' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Type :</strong>
+                        <p>
+                            {% set typeLabels = {
+                                'custom': 'Lien personnalisé',
+                                'home': 'Page d\'accueil',
+                                'page': 'Page',
+                                'post': 'Article',
+                                'category': 'Catégorie',
+                                'tag': 'Tag'
+                            } %}
+                            {{ typeLabels[menu.type] ?? menu.type }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Emplacement :</strong>
+                        <p>
+                            {% set locationLabels = {
+                                'primary': 'Menu principal',
+                                'secondary': 'Menu secondaire',
+                                'footer': 'Menu pied de page',
+                                'social': 'Menu réseaux sociaux'
+                            } %}
+                            {{ locationLabels[menu.location] ?? menu.location }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Ordre d'affichage :</strong>
+                        <p>{{ menu.menuOrder }}</p>
+                    </div>
+                </div>
+                
+                {% if menu.description %}
+                <div class="row">
+                    <div class="col-12">
+                        <strong>Description :</strong>
+                        <p>{{ menu.getTranslationForLanguage(currentLanguage).description }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Contenu lié -->
+        {% if menu.url or menu.page or menu.post or menu.category or menu.tag %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Contenu lié</h5>
+            </div>
+            <div class="card-body">
+                {% if menu.url %}
+                    <div class="mb-2">
+                        <strong>URL :</strong>
+                        <a href="{{ menu.url }}" target="{{ menu.target }}">{{ menu.url }}</a>
+                        {% if menu.target == '_blank' %}
+                            <i class="fas fa-external-link-alt ms-1"></i>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                {% if menu.page %}
+                    <div class="mb-2">
+                        <strong>Page liée :</strong>
+                        <a href="{{ path('admin_pages_show', {id: menu.page.id}) }}">
+                            {{ menu.page.getTranslationForLanguage(currentLanguage).title }}
+                        </a>
+                    </div>
+                {% endif %}
+                
+                {% if menu.post %}
+                    <div class="mb-2">
+                        <strong>Article lié :</strong>
+                        <a href="{{ path('admin_posts_show', {id: menu.post.id}) }}">
+                            {{ menu.post.getTranslationForLanguage(currentLanguage).title }}
+                        </a>
+                    </div>
+                {% endif %}
+                
+                {% if menu.category %}
+                    <div class="mb-2">
+                        <strong>Catégorie liée :</strong>
+                        <a href="{{ path('admin_categories_show', {id: menu.category.id}) }}">
+                            {{ menu.category.getTranslationForLanguage(currentLanguage).name }}
+                        </a>
+                    </div>
+                {% endif %}
+                
+                {% if menu.tag %}
+                    <div class="mb-2">
+                        <strong>Tag lié :</strong>
+                        <a href="{{ path('admin_tags_show', {id: menu.tag.id}) }}">
+                            {{ menu.tag.getTranslationForLanguage(currentLanguage).name }}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Hiérarchie -->
+        {% if menu.parent or menu.children|length > 0 %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Hiérarchie</h5>
+            </div>
+            <div class="card-body">
+                {% if menu.parent %}
+                    <div class="mb-2">
+                        <strong>Parent :</strong>
+                        <a href="{{ path('admin_menus_show', {id: menu.parent.id}) }}">
+                            {{ menu.parent.getTranslationForLanguage(currentLanguage).title }}
+                        </a>
+                    </div>
+                {% endif %}
+                
+                {% if menu.children|length > 0 %}
+                    <div>
+                        <strong>Enfants :</strong>
+                        <ul class="list-unstyled mt-2">
+                            {% for child in menu.children %}
+                                <li class="ms-3">
+                                    <a href="{{ path('admin_menus_show', {id: child.id}) }}">
+                                        {{ child.getTranslationForLanguage(currentLanguage).title }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Statut et paramètres -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Statut et paramètres</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Statut :</strong>
+                    {% if menu.isActive %}
+                        <span class="badge bg-success">Actif</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactif</span>
+                    {% endif %}
+                </div>
+                
+                {% if menu.target %}
+                <div class="mb-3">
+                    <strong>Cible :</strong>
+                    {% if menu.target == '_blank' %}
+                        <span class="badge bg-info">Nouvelle fenêtre</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Même fenêtre</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if menu.cssClass %}
+                <div class="mb-3">
+                    <strong>Classe CSS :</strong>
+                    <code>{{ menu.cssClass }}</code>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Traductions -->
+        {% if availableLanguages|length > 1 %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Traductions</h5>
+            </div>
+            <div class="card-body">
+                {% for language in availableLanguages %}
+                    {% set translation = menu.getTranslationForLanguage(language) %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>
+                            <i class="fas fa-language me-1"></i>
+                            {{ language.name }}
+                        </span>
+                        {% if translation and translation.title %}
+                            <span class="badge bg-success">Traduit</span>
+                        {% else %}
+                            <span class="badge bg-warning">Non traduit</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ path('admin_menus_edit', {id: menu.id}) }}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>
+                    <a href="{{ path('admin_menus_builder', {location: menu.location}) }}" class="btn btn-outline-info">
+                        <i class="fas fa-sitemap"></i> Constructeur de menu
+                    </a>
+                    {% if is_granted('ROLE_ADMIN') %}
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_granted('ROLE_ADMIN') %}
+<!-- Modal de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer cet élément de menu ?</p>
+                {% if menu.children|length > 0 %}
+                    <div class="alert alert-warning">
+                        <strong>Attention :</strong> Cet élément a {{ menu.children|length }} enfant(s). Ils seront également supprimés.
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form method="post" action="{{ path('admin_menus_delete', {id: menu.id}) }}" class="d-inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ menu.id) }}">
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

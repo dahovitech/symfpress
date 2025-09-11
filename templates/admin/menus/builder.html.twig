@@ -1,0 +1,457 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Constructeur de menu - {{ location|title }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Administration</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_menus_index') }}">Menus</a></li>
+        <li class="breadcrumb-item active">Constructeur - {{ location|title }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.css">
+<style>
+    .menu-builder {
+        min-height: 400px;
+    }
+    .menu-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: move;
+        transition: all 0.2s ease;
+    }
+    .menu-item:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    .menu-item.sortable-ghost {
+        opacity: 0.4;
+    }
+    .menu-item.sortable-chosen {
+        background-color: #f8f9fa;
+    }
+    .menu-children {
+        margin-left: 30px;
+        margin-top: 10px;
+        border-left: 2px solid #6c757d;
+        padding-left: 15px;
+    }
+    .content-panel {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    .content-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 10px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .content-item:hover {
+        background: #e9ecef;
+    }
+    .menu-handle {
+        cursor: grab;
+        color: #6c757d;
+    }
+    .menu-handle:hover {
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h1 class="h3">Constructeur de menu</h1>
+        <p class="text-muted">Emplacement : <strong>{{ location|title }}</strong></p>
+    </div>
+    
+    <div class="btn-group">
+        <a href="{{ path('admin_menus_new', {location: location}) }}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Nouvel élément
+        </a>
+        <a href="{{ path('admin_menus_index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Zone de construction du menu -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Structure du menu</h5>
+                <button type="button" class="btn btn-sm btn-primary" id="saveMenuOrder">
+                    <i class="fas fa-save"></i> Enregistrer l'ordre
+                </button>
+            </div>
+            <div class="card-body menu-builder" id="menuBuilder">
+                {% if menus|length > 0 %}
+                    <div id="menuList">
+                        {% for menu in menus %}
+                            {{ _self.renderMenuItem(menu, currentLanguage) }}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-bars fa-3x mb-3"></i>
+                        <p>Aucun élément de menu dans cet emplacement.</p>
+                        <p>Utilisez le panneau de droite pour ajouter du contenu ou créez un nouvel élément.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Panneau de contenu disponible -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Contenu disponible</h5>
+            </div>
+            <div class="card-body p-0">
+                <!-- Onglets de contenu -->
+                <div class="nav nav-tabs" role="tablist">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pages-tab" type="button">Pages</button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#categories-tab" type="button">Catégories</button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tags-tab" type="button">Tags</button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#custom-tab" type="button">Personnalisé</button>
+                </div>
+                
+                <div class="tab-content">
+                    <!-- Pages -->
+                    <div class="tab-pane fade show active content-panel p-3" id="pages-tab">
+                        {% if availableContent.pages|length > 0 %}
+                            {% for page in availableContent.pages %}
+                                <div class="content-item" data-type="page" data-id="{{ page.id }}" data-title="{{ page.getTranslationForLanguage(currentLanguage).title }}">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ page.getTranslationForLanguage(currentLanguage).title }}</span>
+                                        <i class="fas fa-plus text-success"></i>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">Aucune page disponible</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Catégories -->
+                    <div class="tab-pane fade content-panel p-3" id="categories-tab">
+                        {% if availableContent.categories|length > 0 %}
+                            {% for category in availableContent.categories %}
+                                <div class="content-item" data-type="category" data-id="{{ category.id }}" data-title="{{ category.getTranslationForLanguage(currentLanguage).name }}">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ category.getTranslationForLanguage(currentLanguage).name }}</span>
+                                        <i class="fas fa-plus text-success"></i>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">Aucune catégorie disponible</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Tags -->
+                    <div class="tab-pane fade content-panel p-3" id="tags-tab">
+                        {% if availableContent.tags|length > 0 %}
+                            {% for tag in availableContent.tags %}
+                                <div class="content-item" data-type="tag" data-id="{{ tag.id }}" data-title="{{ tag.getTranslationForLanguage(currentLanguage).name }}">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ tag.getTranslationForLanguage(currentLanguage).name }}</span>
+                                        <i class="fas fa-plus text-success"></i>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">Aucun tag disponible</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Lien personnalisé -->
+                    <div class="tab-pane fade content-panel p-3" id="custom-tab">
+                        <form id="customLinkForm">
+                            <div class="mb-3">
+                                <label class="form-label">Titre</label>
+                                <input type="text" class="form-control" id="customTitle" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">URL</label>
+                                <input type="url" class="form-control" id="customUrl" placeholder="https://..." required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Cible</label>
+                                <select class="form-select" id="customTarget">
+                                    <option value="_self">Même fenêtre</option>
+                                    <option value="_blank">Nouvelle fenêtre</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-plus"></i> Ajouter le lien
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% macro renderMenuItem(menu, currentLanguage) %}
+    <div class="menu-item" data-id="{{ menu.id }}">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-grip-vertical menu-handle me-2"></i>
+                    <strong>{{ menu.getTranslationForLanguage(currentLanguage).title ?: 'Sans titre' }}</strong>
+                    {% if not menu.isActive %}
+                        <span class="badge bg-danger ms-2">Inactif</span>
+                    {% endif %}
+                </div>
+                
+                <div class="text-muted small">
+                    Type : {{ menu.type|title }}
+                    {% if menu.url %}
+                        • URL : {{ menu.url }}
+                    {% elseif menu.page %}
+                        • Page : {{ menu.page.getTranslationForLanguage(currentLanguage).title }}
+                    {% elseif menu.category %}
+                        • Catégorie : {{ menu.category.getTranslationForLanguage(currentLanguage).name }}
+                    {% elseif menu.tag %}
+                        • Tag : {{ menu.tag.getTranslationForLanguage(currentLanguage).name }}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="btn-group btn-group-sm">
+                <a href="{{ path('admin_menus_edit', {id: menu.id}) }}" class="btn btn-outline-primary" title="Modifier">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button type="button" class="btn btn-outline-danger" onclick="deleteMenuItem({{ menu.id }})" title="Supprimer">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        
+        {% if menu.children|length > 0 %}
+            <div class="menu-children" data-parent="{{ menu.id }}">
+                {% for child in menu.children %}
+                    {{ _self.renderMenuItem(child, currentLanguage) }}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser Sortable pour le menu principal
+    const menuList = document.getElementById('menuList');
+    if (menuList) {
+        new Sortable(menuList, {
+            group: 'menu',
+            handle: '.menu-handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            animation: 150,
+            onUpdate: function(evt) {
+                updateMenuOrder();
+            }
+        });
+    }
+    
+    // Initialiser Sortable pour les sous-menus
+    document.querySelectorAll('.menu-children').forEach(function(element) {
+        new Sortable(element, {
+            group: 'menu',
+            handle: '.menu-handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            animation: 150,
+            onUpdate: function(evt) {
+                updateMenuOrder();
+            }
+        });
+    });
+    
+    // Gestion des clics sur le contenu disponible
+    document.querySelectorAll('.content-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+            const type = this.dataset.type;
+            const id = this.dataset.id;
+            const title = this.dataset.title;
+            
+            createMenuItem(type, id, title);
+        });
+    });
+    
+    // Gestion du formulaire de lien personnalisé
+    document.getElementById('customLinkForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const title = document.getElementById('customTitle').value;
+        const url = document.getElementById('customUrl').value;
+        const target = document.getElementById('customTarget').value;
+        
+        createCustomMenuItem(title, url, target);
+        
+        // Réinitialiser le formulaire
+        this.reset();
+    });
+    
+    // Bouton de sauvegarde
+    document.getElementById('saveMenuOrder').addEventListener('click', function() {
+        saveMenuOrder();
+    });
+});
+
+function createMenuItem(type, id, title) {
+    // Créer un nouvel élément de menu via AJAX
+    fetch('{{ path("admin_menus_new") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new URLSearchParams({
+            'type': type,
+            [type + '_id']: id,
+            'title': title,
+            'location': '{{ location }}',
+            '_token': '{{ csrf_token("menu_create") }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur lors de la création de l\'élément de menu');
+        }
+    });
+}
+
+function createCustomMenuItem(title, url, target) {
+    fetch('{{ path("admin_menus_new") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new URLSearchParams({
+            'type': 'custom',
+            'title': title,
+            'url': url,
+            'target': target,
+            'location': '{{ location }}',
+            '_token': '{{ csrf_token("menu_create") }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur lors de la création du lien personnalisé');
+        }
+    });
+}
+
+function deleteMenuItem(id) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet élément de menu ?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ path("admin_menus_delete", {id: "__ID__"}) }}'.replace('__ID__', id);
+        
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '_token';
+        tokenInput.value = '{{ csrf_token("delete") }}';
+        
+        form.appendChild(tokenInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function updateMenuOrder() {
+    // Cette fonction sera appelée lors du drag & drop
+    // pour mettre à jour l'ordre visuellement
+}
+
+function saveMenuOrder() {
+    const menuItems = [];
+    
+    function collectItems(container, parent = null) {
+        const items = container.children;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const id = item.dataset.id;
+            
+            if (id) {
+                const menuItem = {
+                    id: parseInt(id),
+                    order: i,
+                    parent: parent
+                };
+                
+                menuItems.push(menuItem);
+                
+                // Vérifier s'il y a des enfants
+                const childrenContainer = item.querySelector('.menu-children');
+                if (childrenContainer) {
+                    collectItems(childrenContainer, parseInt(id));
+                }
+            }
+        }
+    }
+    
+    const menuList = document.getElementById('menuList');
+    if (menuList) {
+        collectItems(menuList);
+    }
+    
+    // Envoyer les données au serveur
+    fetch('{{ path("admin_menus_reorder") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            items: menuItems
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Afficher un message de succès
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                Ordre du menu sauvegardé avec succès !
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.admin-content').insertBefore(alert, document.querySelector('.admin-content').firstChild);
+        } else {
+            alert('Erreur lors de la sauvegarde de l\'ordre du menu');
+        }
+    });
+}
+</script>
+{% endblock %}

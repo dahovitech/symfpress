@@ -1,0 +1,811 @@
+<?php
+
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Extension\CoreExtension;
+use Twig\Extension\SandboxExtension;
+use Twig\Markup;
+use Twig\Sandbox\SecurityError;
+use Twig\Sandbox\SecurityNotAllowedTagError;
+use Twig\Sandbox\SecurityNotAllowedFilterError;
+use Twig\Sandbox\SecurityNotAllowedFunctionError;
+use Twig\Source;
+use Twig\Template;
+use Twig\TemplateWrapper;
+
+/* admin/languages/form.html.twig */
+class __TwigTemplate_949a1f88bdef31c84a96030a579517e4 extends Template
+{
+    private Source $source;
+    /**
+     * @var array<string, Template>
+     */
+    private array $macros = [];
+
+    public function __construct(Environment $env)
+    {
+        parent::__construct($env);
+
+        $this->source = $this->getSourceContext();
+
+        $this->blocks = [
+            'page_title' => [$this, 'block_page_title'],
+            'breadcrumb' => [$this, 'block_breadcrumb'],
+            'admin_content' => [$this, 'block_admin_content'],
+            'javascripts' => [$this, 'block_javascripts'],
+        ];
+    }
+
+    protected function doGetParent(array $context): bool|string|Template|TemplateWrapper
+    {
+        // line 1
+        return "admin/base.html.twig";
+    }
+
+    protected function doDisplay(array $context, array $blocks = []): iterable
+    {
+        $macros = $this->macros;
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2 = $this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"];
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->enter($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "template", "admin/languages/form.html.twig"));
+
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "template", "admin/languages/form.html.twig"));
+
+        $this->parent = $this->load("admin/base.html.twig", 1);
+        yield from $this->parent->unwrap()->yield($context, array_merge($this->blocks, $blocks));
+        
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->leave($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof);
+
+        
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->leave($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof);
+
+    }
+
+    // line 3
+    /**
+     * @return iterable<null|scalar|\Stringable>
+     */
+    public function block_page_title(array $context, array $blocks = []): iterable
+    {
+        $macros = $this->macros;
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2 = $this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"];
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->enter($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "page_title"));
+
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "page_title"));
+
+        yield (((($tmp = (isset($context["isEdit"]) || array_key_exists("isEdit", $context) ? $context["isEdit"] : (function () { throw new RuntimeError('Variable "isEdit" does not exist.', 3, $this->source); })())) && $tmp instanceof Markup ? (string) $tmp : $tmp)) ? ("Modifier la langue") : ("Nouvelle langue"));
+        
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->leave($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof);
+
+        
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->leave($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof);
+
+        yield from [];
+    }
+
+    // line 5
+    /**
+     * @return iterable<null|scalar|\Stringable>
+     */
+    public function block_breadcrumb(array $context, array $blocks = []): iterable
+    {
+        $macros = $this->macros;
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2 = $this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"];
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->enter($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "breadcrumb"));
+
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "breadcrumb"));
+
+        // line 6
+        yield "<nav aria-label=\"breadcrumb\">
+    <ol class=\"breadcrumb\">
+        <li class=\"breadcrumb-item\"><a href=\"";
+        // line 8
+        yield $this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_dashboard");
+        yield "\">Tableau de bord</a></li>
+        <li class=\"breadcrumb-item\"><a href=\"";
+        // line 9
+        yield $this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_languages_index");
+        yield "\">Langues</a></li>
+        <li class=\"breadcrumb-item active\">";
+        // line 10
+        yield (((($tmp = (isset($context["isEdit"]) || array_key_exists("isEdit", $context) ? $context["isEdit"] : (function () { throw new RuntimeError('Variable "isEdit" does not exist.', 10, $this->source); })())) && $tmp instanceof Markup ? (string) $tmp : $tmp)) ? ("Modifier") : ("Nouvelle langue"));
+        yield "</li>
+    </ol>
+</nav>
+";
+        
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->leave($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof);
+
+        
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->leave($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof);
+
+        yield from [];
+    }
+
+    // line 15
+    /**
+     * @return iterable<null|scalar|\Stringable>
+     */
+    public function block_admin_content(array $context, array $blocks = []): iterable
+    {
+        $macros = $this->macros;
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2 = $this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"];
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->enter($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "admin_content"));
+
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "admin_content"));
+
+        // line 16
+        yield "<div class=\"row\">
+    <div class=\"col-md-8\">
+        <form method=\"POST\" class=\"needs-validation\" novalidate>
+            <div class=\"card\">
+                <div class=\"card-header\">
+                    <h5 class=\"mb-0\">
+                        <i class=\"fas fa-language me-2\"></i>
+                        ";
+        // line 23
+        yield (((($tmp = (isset($context["isEdit"]) || array_key_exists("isEdit", $context) ? $context["isEdit"] : (function () { throw new RuntimeError('Variable "isEdit" does not exist.', 23, $this->source); })())) && $tmp instanceof Markup ? (string) $tmp : $tmp)) ? ("Modifier la langue") : ("Nouvelle langue"));
+        yield "
+                    </h5>
+                </div>
+                <div class=\"card-body\">
+                    <div class=\"row\">
+                        <div class=\"col-md-4\">
+                            <div class=\"mb-3\">
+                                <label for=\"code\" class=\"form-label\">Code de langue <span class=\"text-danger\">*</span></label>
+                                <input type=\"text\" 
+                                       class=\"form-control\" 
+                                       id=\"code\" 
+                                       name=\"code\" 
+                                       value=\"";
+        // line 35
+        yield (((CoreExtension::getAttribute($this->env, $this->source, ($context["language"] ?? null), "code", [], "any", true, true, false, 35) &&  !(null === CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 35, $this->source); })()), "code", [], "any", false, false, false, 35)))) ? ($this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape(CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 35, $this->source); })()), "code", [], "any", false, false, false, 35), "html", null, true)) : (""));
+        yield "\"
+                                       maxlength=\"10\"
+                                       pattern=\"[a-z]{2,10}\"
+                                       ";
+        // line 38
+        yield (((($tmp = (isset($context["isEdit"]) || array_key_exists("isEdit", $context) ? $context["isEdit"] : (function () { throw new RuntimeError('Variable "isEdit" does not exist.', 38, $this->source); })())) && $tmp instanceof Markup ? (string) $tmp : $tmp)) ? ("readonly") : (""));
+        yield "
+                                       required>
+                                <div class=\"form-text\">
+                                    Code ISO 639-1 (ex: fr, en, es). Ne peut pas être modifié après création.
+                                </div>
+                                <div class=\"invalid-feedback\">
+                                    Veuillez saisir un code de langue valide (2-10 caractères, lettres minuscules uniquement).
+                                </div>
+                            </div>
+                        </div>
+                        <div class=\"col-md-8\">
+                            <div class=\"mb-3\">
+                                <label for=\"name\" class=\"form-label\">Nom de la langue <span class=\"text-danger\">*</span></label>
+                                <input type=\"text\" 
+                                       class=\"form-control\" 
+                                       id=\"name\" 
+                                       name=\"name\" 
+                                       value=\"";
+        // line 55
+        yield (((CoreExtension::getAttribute($this->env, $this->source, ($context["language"] ?? null), "name", [], "any", true, true, false, 55) &&  !(null === CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 55, $this->source); })()), "name", [], "any", false, false, false, 55)))) ? ($this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape(CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 55, $this->source); })()), "name", [], "any", false, false, false, 55), "html", null, true)) : (""));
+        yield "\"
+                                       maxlength=\"100\"
+                                       required>
+                                <div class=\"form-text\">
+                                    Nom complet de la langue (ex: Français, English, Español).
+                                </div>
+                                <div class=\"invalid-feedback\">
+                                    Veuillez saisir le nom de la langue.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class=\"row\">
+                        <div class=\"col-12\">
+                            <div class=\"mb-3\">
+                                <div class=\"form-check\">
+                                    <input class=\"form-check-input\" 
+                                           type=\"checkbox\" 
+                                           id=\"is_active\" 
+                                           name=\"is_active\"
+                                           ";
+        // line 76
+        yield (((($tmp = (((CoreExtension::getAttribute($this->env, $this->source, ($context["language"] ?? null), "isActive", [], "any", true, true, false, 76) &&  !(null === CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 76, $this->source); })()), "isActive", [], "any", false, false, false, 76)))) ? (CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 76, $this->source); })()), "isActive", [], "any", false, false, false, 76)) : (true))) && $tmp instanceof Markup ? (string) $tmp : $tmp)) ? ("checked") : (""));
+        yield ">
+                                    <label class=\"form-check-label\" for=\"is_active\">
+                                        <strong>Langue active</strong>
+                                    </label>
+                                    <div class=\"form-text\">
+                                        Les langues actives sont disponibles pour la traduction du contenu.
+                                    </div>
+                                </div>
+                            </div>
+
+                            ";
+        // line 86
+        if (( !(isset($context["isEdit"]) || array_key_exists("isEdit", $context) ? $context["isEdit"] : (function () { throw new RuntimeError('Variable "isEdit" does not exist.', 86, $this->source); })()) ||  !CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 86, $this->source); })()), "isDefault", [], "any", false, false, false, 86))) {
+            // line 87
+            yield "                                <div class=\"mb-3\">
+                                    <div class=\"form-check\">
+                                        <input class=\"form-check-input\" 
+                                               type=\"checkbox\" 
+                                               id=\"is_default\" 
+                                               name=\"is_default\"
+                                               ";
+            // line 93
+            yield (((($tmp = (((CoreExtension::getAttribute($this->env, $this->source, ($context["language"] ?? null), "isDefault", [], "any", true, true, false, 93) &&  !(null === CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 93, $this->source); })()), "isDefault", [], "any", false, false, false, 93)))) ? (CoreExtension::getAttribute($this->env, $this->source, (isset($context["language"]) || array_key_exists("language", $context) ? $context["language"] : (function () { throw new RuntimeError('Variable "language" does not exist.', 93, $this->source); })()), "isDefault", [], "any", false, false, false, 93)) : (false))) && $tmp instanceof Markup ? (string) $tmp : $tmp)) ? ("checked") : (""));
+            yield ">
+                                        <label class=\"form-check-label\" for=\"is_default\">
+                                            <strong>Langue par défaut</strong>
+                                        </label>
+                                        <div class=\"form-text\">
+                                            La langue par défaut est utilisée quand aucune autre langue n'est spécifiée.
+                                            <br><strong>Attention :</strong> Ceci déplacera le statut \"par défaut\" de la langue actuelle.
+                                        </div>
+                                    </div>
+                                </div>
+                            ";
+        } else {
+            // line 104
+            yield "                                <div class=\"alert alert-info\">
+                                    <i class=\"fas fa-info-circle me-2\"></i>
+                                    Cette langue est actuellement la langue par défaut. 
+                                    Vous pouvez définir une autre langue comme langue par défaut depuis la liste des langues.
+                                </div>
+                            ";
+        }
+        // line 110
+        yield "                        </div>
+                    </div>
+                </div>
+                <div class=\"card-footer d-flex justify-content-between\">
+                    <a href=\"";
+        // line 114
+        yield $this->extensions['Symfony\Bridge\Twig\Extension\RoutingExtension']->getPath("admin_languages_index");
+        yield "\" class=\"btn btn-outline-secondary\">
+                        <i class=\"fas fa-arrow-left me-1\"></i>
+                        Retour à la liste
+                    </a>
+                    <button type=\"submit\" class=\"btn btn-primary\">
+                        <i class=\"fas fa-save me-1\"></i>
+                        ";
+        // line 120
+        yield (((($tmp = (isset($context["isEdit"]) || array_key_exists("isEdit", $context) ? $context["isEdit"] : (function () { throw new RuntimeError('Variable "isEdit" does not exist.', 120, $this->source); })())) && $tmp instanceof Markup ? (string) $tmp : $tmp)) ? ("Modifier la langue") : ("Créer la langue"));
+        yield "
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class=\"col-md-4\">
+        <div class=\"card\">
+            <div class=\"card-header\">
+                <h6 class=\"mb-0\">
+                    <i class=\"fas fa-info-circle me-2\"></i>
+                    Codes de langue courants
+                </h6>
+            </div>
+            <div class=\"card-body\">
+                <div class=\"small\">
+                    <div class=\"row g-2\">
+                        <div class=\"col-6\"><code>fr</code> - Français</div>
+                        <div class=\"col-6\"><code>en</code> - English</div>
+                        <div class=\"col-6\"><code>es</code> - Español</div>
+                        <div class=\"col-6\"><code>de</code> - Deutsch</div>
+                        <div class=\"col-6\"><code>it</code> - Italiano</div>
+                        <div class=\"col-6\"><code>pt</code> - Português</div>
+                        <div class=\"col-6\"><code>ru</code> - Русский</div>
+                        <div class=\"col-6\"><code>zh</code> - 中文</div>
+                        <div class=\"col-6\"><code>ja</code> - 日本語</div>
+                        <div class=\"col-6\"><code>ko</code> - 한국어</div>
+                        <div class=\"col-6\"><code>ar</code> - العربية</div>
+                        <div class=\"col-6\"><code>hi</code> - हिन्दी</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class=\"card mt-3\">
+            <div class=\"card-header\">
+                <h6 class=\"mb-0\">
+                    <i class=\"fas fa-lightbulb me-2\"></i>
+                    Bonnes pratiques
+                </h6>
+            </div>
+            <div class=\"card-body\">
+                <ul class=\"list-unstyled small mb-0\">
+                    <li class=\"mb-2\">
+                        <i class=\"fas fa-check text-success me-2\"></i>
+                        Utilisez les codes ISO 639-1 standard
+                    </li>
+                    <li class=\"mb-2\">
+                        <i class=\"fas fa-check text-success me-2\"></i>
+                        Activez seulement les langues que vous gérez
+                    </li>
+                    <li class=\"mb-2\">
+                        <i class=\"fas fa-check text-success me-2\"></i>
+                        Définissez votre langue principale comme défaut
+                    </li>
+                    <li class=\"mb-2\">
+                        <i class=\"fas fa-exclamation-triangle text-warning me-2\"></i>
+                        Ne supprimez pas une langue avec du contenu
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+";
+        
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->leave($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof);
+
+        
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->leave($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof);
+
+        yield from [];
+    }
+
+    // line 187
+    /**
+     * @return iterable<null|scalar|\Stringable>
+     */
+    public function block_javascripts(array $context, array $blocks = []): iterable
+    {
+        $macros = $this->macros;
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2 = $this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"];
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->enter($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "javascripts"));
+
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "javascripts"));
+
+        // line 188
+        yield "    ";
+        yield from $this->yieldParentBlock("javascripts", $context, $blocks);
+        yield "
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Validation du formulaire Bootstrap
+            const forms = document.querySelectorAll('.needs-validation');
+            forms.forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                });
+            });
+
+            // Auto-génération du nom de langue basé sur le code (pour nouveaux)
+            ";
+        // line 204
+        if ((($tmp =  !(isset($context["isEdit"]) || array_key_exists("isEdit", $context) ? $context["isEdit"] : (function () { throw new RuntimeError('Variable "isEdit" does not exist.', 204, $this->source); })())) && $tmp instanceof Markup ? (string) $tmp : $tmp)) {
+            // line 205
+            yield "            const codeInput = document.getElementById('code');
+            const nameInput = document.getElementById('name');
+            
+            const languageNames = {
+                'fr': 'Français',
+                'en': 'English', 
+                'es': 'Español',
+                'de': 'Deutsch',
+                'it': 'Italiano',
+                'pt': 'Português',
+                'ru': 'Русский',
+                'zh': '中文',
+                'ja': '日本語',
+                'ko': '한국어',
+                'ar': 'العربية',
+                'hi': 'हिन्दी',
+                'nl': 'Nederlands',
+                'sv': 'Svenska',
+                'da': 'Dansk',
+                'no': 'Norsk',
+                'fi': 'Suomi',
+                'pl': 'Polski',
+                'cs': 'Čeština',
+                'sk': 'Slovenčina',
+                'hu': 'Magyar',
+                'ro': 'Română',
+                'bg': 'Български',
+                'hr': 'Hrvatski',
+                'sr': 'Српски',
+                'sl': 'Slovenščina',
+                'et': 'Eesti',
+                'lv': 'Latviešu',
+                'lt': 'Lietuvių',
+                'mt': 'Malti',
+                'el': 'Ελληνικά',
+                'tr': 'Türkçe',
+                'uk': 'Українська',
+                'be': 'Беларуская',
+                'mk': 'Македонски',
+                'sq': 'Shqip',
+                'bs': 'Bosanski',
+                'me': 'Crnogorski',
+                'is': 'Íslenska',
+                'fo': 'Føroyskt',
+                'ga': 'Gaeilge',
+                'gd': 'Gàidhlig',
+                'cy': 'Cymraeg',
+                'br': 'Brezhoneg',
+                'eu': 'Euskera',
+                'ca': 'Català',
+                'gl': 'Galego',
+                'oc': 'Occitan'
+            };
+
+            codeInput.addEventListener('input', function() {
+                const code = this.value.toLowerCase().trim();
+                if (languageNames[code] && nameInput.value === '') {
+                    nameInput.value = languageNames[code];
+                }
+            });
+            ";
+        }
+        // line 266
+        yield "
+            // Warning pour la langue par défaut
+            const defaultCheckbox = document.getElementById('is_default');
+            if (defaultCheckbox) {
+                defaultCheckbox.addEventListener('change', function() {
+                    const activeCheckbox = document.getElementById('is_active');
+                    if (this.checked) {
+                        activeCheckbox.checked = true;
+                        activeCheckbox.disabled = true;
+                        
+                        // Afficher un avertissement
+                        if (!document.querySelector('.default-warning')) {
+                            const warning = document.createElement('div');
+                            warning.className = 'alert alert-warning mt-2 default-warning';
+                            warning.innerHTML = '<i class=\"fas fa-exclamation-triangle me-2\"></i>Définir cette langue comme langue par défaut déplacera le statut de la langue actuelle.';
+                            this.closest('.form-check').appendChild(warning);
+                        }
+                    } else {
+                        activeCheckbox.disabled = false;
+                        const warning = document.querySelector('.default-warning');
+                        if (warning) {
+                            warning.remove();
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+";
+        
+        $__internal_6f47bbe9983af81f1e7450e9a3e3768f->leave($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof);
+
+        
+        $__internal_5a27a8ba21ca79b61932376b2fa922d2->leave($__internal_5a27a8ba21ca79b61932376b2fa922d2_prof);
+
+        yield from [];
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function getTemplateName(): string
+    {
+        return "admin/languages/form.html.twig";
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function isTraitable(): bool
+    {
+        return false;
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public function getDebugInfo(): array
+    {
+        return array (  451 => 266,  388 => 205,  386 => 204,  366 => 188,  353 => 187,  276 => 120,  267 => 114,  261 => 110,  253 => 104,  239 => 93,  231 => 87,  229 => 86,  216 => 76,  192 => 55,  172 => 38,  166 => 35,  151 => 23,  142 => 16,  129 => 15,  114 => 10,  110 => 9,  106 => 8,  102 => 6,  89 => 5,  66 => 3,  43 => 1,);
+    }
+
+    public function getSourceContext(): Source
+    {
+        return new Source("{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ isEdit ? 'Modifier la langue' : 'Nouvelle langue' }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label=\"breadcrumb\">
+    <ol class=\"breadcrumb\">
+        <li class=\"breadcrumb-item\"><a href=\"{{ path('admin_dashboard') }}\">Tableau de bord</a></li>
+        <li class=\"breadcrumb-item\"><a href=\"{{ path('admin_languages_index') }}\">Langues</a></li>
+        <li class=\"breadcrumb-item active\">{{ isEdit ? 'Modifier' : 'Nouvelle langue' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class=\"row\">
+    <div class=\"col-md-8\">
+        <form method=\"POST\" class=\"needs-validation\" novalidate>
+            <div class=\"card\">
+                <div class=\"card-header\">
+                    <h5 class=\"mb-0\">
+                        <i class=\"fas fa-language me-2\"></i>
+                        {{ isEdit ? 'Modifier la langue' : 'Nouvelle langue' }}
+                    </h5>
+                </div>
+                <div class=\"card-body\">
+                    <div class=\"row\">
+                        <div class=\"col-md-4\">
+                            <div class=\"mb-3\">
+                                <label for=\"code\" class=\"form-label\">Code de langue <span class=\"text-danger\">*</span></label>
+                                <input type=\"text\" 
+                                       class=\"form-control\" 
+                                       id=\"code\" 
+                                       name=\"code\" 
+                                       value=\"{{ language.code ?? '' }}\"
+                                       maxlength=\"10\"
+                                       pattern=\"[a-z]{2,10}\"
+                                       {{ isEdit ? 'readonly' : '' }}
+                                       required>
+                                <div class=\"form-text\">
+                                    Code ISO 639-1 (ex: fr, en, es). Ne peut pas être modifié après création.
+                                </div>
+                                <div class=\"invalid-feedback\">
+                                    Veuillez saisir un code de langue valide (2-10 caractères, lettres minuscules uniquement).
+                                </div>
+                            </div>
+                        </div>
+                        <div class=\"col-md-8\">
+                            <div class=\"mb-3\">
+                                <label for=\"name\" class=\"form-label\">Nom de la langue <span class=\"text-danger\">*</span></label>
+                                <input type=\"text\" 
+                                       class=\"form-control\" 
+                                       id=\"name\" 
+                                       name=\"name\" 
+                                       value=\"{{ language.name ?? '' }}\"
+                                       maxlength=\"100\"
+                                       required>
+                                <div class=\"form-text\">
+                                    Nom complet de la langue (ex: Français, English, Español).
+                                </div>
+                                <div class=\"invalid-feedback\">
+                                    Veuillez saisir le nom de la langue.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class=\"row\">
+                        <div class=\"col-12\">
+                            <div class=\"mb-3\">
+                                <div class=\"form-check\">
+                                    <input class=\"form-check-input\" 
+                                           type=\"checkbox\" 
+                                           id=\"is_active\" 
+                                           name=\"is_active\"
+                                           {{ language.isActive ?? true ? 'checked' : '' }}>
+                                    <label class=\"form-check-label\" for=\"is_active\">
+                                        <strong>Langue active</strong>
+                                    </label>
+                                    <div class=\"form-text\">
+                                        Les langues actives sont disponibles pour la traduction du contenu.
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if not isEdit or not language.isDefault %}
+                                <div class=\"mb-3\">
+                                    <div class=\"form-check\">
+                                        <input class=\"form-check-input\" 
+                                               type=\"checkbox\" 
+                                               id=\"is_default\" 
+                                               name=\"is_default\"
+                                               {{ language.isDefault ?? false ? 'checked' : '' }}>
+                                        <label class=\"form-check-label\" for=\"is_default\">
+                                            <strong>Langue par défaut</strong>
+                                        </label>
+                                        <div class=\"form-text\">
+                                            La langue par défaut est utilisée quand aucune autre langue n'est spécifiée.
+                                            <br><strong>Attention :</strong> Ceci déplacera le statut \"par défaut\" de la langue actuelle.
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class=\"alert alert-info\">
+                                    <i class=\"fas fa-info-circle me-2\"></i>
+                                    Cette langue est actuellement la langue par défaut. 
+                                    Vous pouvez définir une autre langue comme langue par défaut depuis la liste des langues.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class=\"card-footer d-flex justify-content-between\">
+                    <a href=\"{{ path('admin_languages_index') }}\" class=\"btn btn-outline-secondary\">
+                        <i class=\"fas fa-arrow-left me-1\"></i>
+                        Retour à la liste
+                    </a>
+                    <button type=\"submit\" class=\"btn btn-primary\">
+                        <i class=\"fas fa-save me-1\"></i>
+                        {{ isEdit ? 'Modifier la langue' : 'Créer la langue' }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class=\"col-md-4\">
+        <div class=\"card\">
+            <div class=\"card-header\">
+                <h6 class=\"mb-0\">
+                    <i class=\"fas fa-info-circle me-2\"></i>
+                    Codes de langue courants
+                </h6>
+            </div>
+            <div class=\"card-body\">
+                <div class=\"small\">
+                    <div class=\"row g-2\">
+                        <div class=\"col-6\"><code>fr</code> - Français</div>
+                        <div class=\"col-6\"><code>en</code> - English</div>
+                        <div class=\"col-6\"><code>es</code> - Español</div>
+                        <div class=\"col-6\"><code>de</code> - Deutsch</div>
+                        <div class=\"col-6\"><code>it</code> - Italiano</div>
+                        <div class=\"col-6\"><code>pt</code> - Português</div>
+                        <div class=\"col-6\"><code>ru</code> - Русский</div>
+                        <div class=\"col-6\"><code>zh</code> - 中文</div>
+                        <div class=\"col-6\"><code>ja</code> - 日本語</div>
+                        <div class=\"col-6\"><code>ko</code> - 한국어</div>
+                        <div class=\"col-6\"><code>ar</code> - العربية</div>
+                        <div class=\"col-6\"><code>hi</code> - हिन्दी</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class=\"card mt-3\">
+            <div class=\"card-header\">
+                <h6 class=\"mb-0\">
+                    <i class=\"fas fa-lightbulb me-2\"></i>
+                    Bonnes pratiques
+                </h6>
+            </div>
+            <div class=\"card-body\">
+                <ul class=\"list-unstyled small mb-0\">
+                    <li class=\"mb-2\">
+                        <i class=\"fas fa-check text-success me-2\"></i>
+                        Utilisez les codes ISO 639-1 standard
+                    </li>
+                    <li class=\"mb-2\">
+                        <i class=\"fas fa-check text-success me-2\"></i>
+                        Activez seulement les langues que vous gérez
+                    </li>
+                    <li class=\"mb-2\">
+                        <i class=\"fas fa-check text-success me-2\"></i>
+                        Définissez votre langue principale comme défaut
+                    </li>
+                    <li class=\"mb-2\">
+                        <i class=\"fas fa-exclamation-triangle text-warning me-2\"></i>
+                        Ne supprimez pas une langue avec du contenu
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Validation du formulaire Bootstrap
+            const forms = document.querySelectorAll('.needs-validation');
+            forms.forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                });
+            });
+
+            // Auto-génération du nom de langue basé sur le code (pour nouveaux)
+            {% if not isEdit %}
+            const codeInput = document.getElementById('code');
+            const nameInput = document.getElementById('name');
+            
+            const languageNames = {
+                'fr': 'Français',
+                'en': 'English', 
+                'es': 'Español',
+                'de': 'Deutsch',
+                'it': 'Italiano',
+                'pt': 'Português',
+                'ru': 'Русский',
+                'zh': '中文',
+                'ja': '日本語',
+                'ko': '한국어',
+                'ar': 'العربية',
+                'hi': 'हिन्दी',
+                'nl': 'Nederlands',
+                'sv': 'Svenska',
+                'da': 'Dansk',
+                'no': 'Norsk',
+                'fi': 'Suomi',
+                'pl': 'Polski',
+                'cs': 'Čeština',
+                'sk': 'Slovenčina',
+                'hu': 'Magyar',
+                'ro': 'Română',
+                'bg': 'Български',
+                'hr': 'Hrvatski',
+                'sr': 'Српски',
+                'sl': 'Slovenščina',
+                'et': 'Eesti',
+                'lv': 'Latviešu',
+                'lt': 'Lietuvių',
+                'mt': 'Malti',
+                'el': 'Ελληνικά',
+                'tr': 'Türkçe',
+                'uk': 'Українська',
+                'be': 'Беларуская',
+                'mk': 'Македонски',
+                'sq': 'Shqip',
+                'bs': 'Bosanski',
+                'me': 'Crnogorski',
+                'is': 'Íslenska',
+                'fo': 'Føroyskt',
+                'ga': 'Gaeilge',
+                'gd': 'Gàidhlig',
+                'cy': 'Cymraeg',
+                'br': 'Brezhoneg',
+                'eu': 'Euskera',
+                'ca': 'Català',
+                'gl': 'Galego',
+                'oc': 'Occitan'
+            };
+
+            codeInput.addEventListener('input', function() {
+                const code = this.value.toLowerCase().trim();
+                if (languageNames[code] && nameInput.value === '') {
+                    nameInput.value = languageNames[code];
+                }
+            });
+            {% endif %}
+
+            // Warning pour la langue par défaut
+            const defaultCheckbox = document.getElementById('is_default');
+            if (defaultCheckbox) {
+                defaultCheckbox.addEventListener('change', function() {
+                    const activeCheckbox = document.getElementById('is_active');
+                    if (this.checked) {
+                        activeCheckbox.checked = true;
+                        activeCheckbox.disabled = true;
+                        
+                        // Afficher un avertissement
+                        if (!document.querySelector('.default-warning')) {
+                            const warning = document.createElement('div');
+                            warning.className = 'alert alert-warning mt-2 default-warning';
+                            warning.innerHTML = '<i class=\"fas fa-exclamation-triangle me-2\"></i>Définir cette langue comme langue par défaut déplacera le statut de la langue actuelle.';
+                            this.closest('.form-check').appendChild(warning);
+                        }
+                    } else {
+                        activeCheckbox.disabled = false;
+                        const warning = document.querySelector('.default-warning');
+                        if (warning) {
+                            warning.remove();
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}
+", "admin/languages/form.html.twig", "/workspace/symfpress/templates/admin/languages/form.html.twig");
+    }
+}

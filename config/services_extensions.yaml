@@ -1,0 +1,23 @@
+# Configuration des services d'extensibilité SymfPress
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            $projectDir: '%kernel.project_dir%'
+    
+    # Hook Manager - Gestionnaire des hooks
+    App\Extension\HookManager:
+        tags: ['monolog.logger']
+    
+    # Plugin Manager - Gestionnaire des plugins
+    App\Extension\PluginManager:
+        tags: ['monolog.logger']
+    
+    # Theme Manager - Gestionnaire des thèmes
+    App\Extension\ThemeManager:
+        tags: ['monolog.logger']
+    
+    # Extension Controller
+    App\Controller\Admin\ExtensionController:
+        tags: ['controller.service_arguments']

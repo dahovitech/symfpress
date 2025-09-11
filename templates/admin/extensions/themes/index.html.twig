@@ -1,0 +1,216 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Thèmes{% endblock %}
+
+{% block admin_content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-paint-brush me-2"></i>
+        Gestion des Thèmes
+    </h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadThemeModal">
+        <i class="fas fa-upload me-2"></i>
+        Installer un Thème
+    </button>
+</div>
+
+<!-- Statistiques des thèmes -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Thèmes Disponibles
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ availableThemes|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-palette fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Thème Actif
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ activeTheme ? themeMetadata[activeTheme].name|default(activeTheme|title) : 'Aucun' }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des thèmes -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Thèmes Disponibles</h6>
+    </div>
+    <div class="card-body">
+        {% if availableThemes|length > 0 %}
+            <div class="row">
+                {% for themeName, themePath in availableThemes %}
+                    {% set metadata = themeMetadata[themeName] ?? {} %}
+                    {% set isActive = themeName == activeTheme %}
+                    
+                    <div class="col-lg-6 col-xl-4 mb-4">
+                        <div class="card h-100 {{ isActive ? 'border-success' : 'border-secondary' }}">
+                            <!-- Screenshot du thème -->
+                            <div class="card-img-top-container" style="height: 200px; overflow: hidden; background: #f8f9fa;">
+                                {% set screenshot = metadata.screenshot %}
+                                {% if screenshot %}
+                                    <img src="{{ '/themes/' ~ themeName ~ '/' ~ screenshot }}" 
+                                         class="card-img-top" 
+                                         style="width: 100%; height: 100%; object-fit: cover;"
+                                         alt="Screenshot {{ metadata.name ?? themeName }}">
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center h-100">
+                                        <i class="fas fa-image fa-3x text-gray-300"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title">{{ metadata.name ?? themeName|title }}</h5>
+                                    {% if isActive %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Disponible</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <p class="card-text text-muted small">
+                                    {{ metadata.description ?? 'Aucune description disponible' }}
+                                </p>
+                                
+                                <div class="row">
+                                    {% if metadata.version is defined %}
+                                        <div class="col-6">
+                                            <small class="text-muted">
+                                                <strong>Version:</strong> {{ metadata.version }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if metadata.author is defined %}
+                                        <div class="col-6">
+                                            <small class="text-muted">
+                                                <strong>Auteur:</strong> {{ metadata.author }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if metadata.supports is defined and metadata.supports|length > 0 %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <strong>Fonctionnalités:</strong>
+                                        </small>
+                                        <div class="mt-1">
+                                            {% for support in metadata.supports %}
+                                                <span class="badge bg-info me-1">{{ support }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="card-footer bg-transparent">
+                                {% if isActive %}
+                                    <button class="btn btn-success btn-sm w-100" disabled>
+                                        <i class="fas fa-check me-1"></i>
+                                        Thème Actif
+                                    </button>
+                                {% else %}
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{{ path('admin_themes_activate', {'themeName': themeName}) }}" 
+                                           class="btn btn-primary btn-sm"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir activer ce thème ?')">
+                                            <i class="fas fa-paint-brush me-1"></i>
+                                            Activer
+                                        </a>
+                                        
+                                        <a href="{{ path('admin_themes_delete', {'themeName': themeName}) }}" 
+                                           class="btn btn-danger btn-sm"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce thème ? Cette action est irréversible.')">
+                                            <i class="fas fa-trash me-1"></i>
+                                            Supprimer
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-paint-brush fa-3x text-gray-300 mb-3"></i>
+                <h5 class="text-gray-600">Aucun thème installé</h5>
+                <p class="text-gray-500">Commencez par installer votre premier thème.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal d'upload de thème -->
+<div class="modal fade" id="uploadThemeModal" tabindex="-1" aria-labelledby="uploadThemeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadThemeModalLabel">
+                    <i class="fas fa-upload me-2"></i>
+                    Installer un Thème
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="{{ path('admin_themes_upload') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="theme_file" class="form-label">Fichier Thème (.zip)</label>
+                        <input type="file" class="form-control" id="theme_file" name="theme_file" accept=".zip" required>
+                        <div class="form-text">
+                            Sélectionnez un fichier ZIP contenant le thème à installer.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Instructions :</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Le fichier doit être un archive ZIP</li>
+                            <li>Le thème doit contenir un fichier theme.yaml (optionnel)</li>
+                            <li>Le dossier templates/ doit contenir les fichiers Twig</li>
+                            <li>Ajoutez un screenshot.png pour un aperçu du thème</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>
+                        Installer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Menus{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active">Menus</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Gestion des menus</h1>
+    <div>
+        <a href="{{ path('admin_menus_builder', {'location': currentLocation}) }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-sitemap"></i> Constructeur de menu
+        </a>
+        <a href="{{ path('admin_menus_new', {'location': currentLocation}) }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nouvel élément
+        </a>
+    </div>
+</div>
+
+<!-- Sélecteur d'emplacement -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <label for="location-select" class="form-label mb-0">Emplacement du menu :</label>
+                <select class="form-select" id="location-select" onchange="changeLocation(this.value)">
+                    {% for locationKey, locationLabel in locations %}
+                        <option value="{{ locationKey }}" {{ currentLocation == locationKey ? 'selected' : '' }}>
+                            {{ locationLabel }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-language me-1"></i> {{ currentLanguage.name }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% for language in availableLanguages %}
+                            <li>
+                                <a class="dropdown-item {{ language == currentLanguage ? 'active' : '' }}" 
+                                   href="{{ path('admin_menus_index', {'location': currentLocation, 'language': language.code}) }}">
+                                    {{ language.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ locations[currentLocation] }} ({{ menus|length }} élément(s))</h5>
+        {% if menus|length > 0 %}
+            <small class="text-muted">Glissez-déposez pour réorganiser</small>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if menus is empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-bars fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun élément de menu</h5>
+                <p class="text-muted mb-4">Commencez par créer votre premier élément de menu pour {{ locations[currentLocation]|lower }}.</p>
+                <a href="{{ path('admin_menus_new', {'location': currentLocation}) }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Créer un élément
+                </a>
+            </div>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="30"><i class="fas fa-grip-vertical text-muted"></i></th>
+                            <th>Titre</th>
+                            <th>Type</th>
+                            <th>URL</th>
+                            <th>Statut</th>
+                            <th>Ordre</th>
+                            <th width="150">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menu-sortable">
+                        {% for menu in menus %}
+                            {{ _self.render_menu_row(menu, currentLanguage, 0) }}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% macro render_menu_row(menu, currentLanguage, level) %}
+    {% set translation = menu.getTranslationForLanguage(currentLanguage) %}
+    <tr data-menu-id="{{ menu.id }}" class="menu-item" style="{{ level > 0 ? 'background-color: #f8f9fa;' : '' }}">
+        <td>
+            <i class="fas fa-grip-vertical text-muted" style="cursor: move;"></i>
+        </td>
+        <td>
+            <div style="padding-left: {{ level * 20 }}px;">
+                {% if level > 0 %}<i class="fas fa-level-up-alt fa-rotate-90 text-muted me-1"></i>{% endif %}
+                <strong>{{ translation ? translation.title : menu.generateDefaultTitle(currentLanguage) }}</strong>
+                {% if translation and translation.description %}
+                    <br><small class="text-muted">{{ translation.description|slice(0, 60) }}{% if translation.description|length > 60 %}...{% endif %}</small>
+                {% endif %}
+            </div>
+        </td>
+        <td>
+            <span class="badge 
+                {% if menu.type == 'home' %}bg-success
+                {% elseif menu.type == 'page' %}bg-primary
+                {% elseif menu.type == 'post' %}bg-info
+                {% elseif menu.type == 'category' %}bg-warning
+                {% elseif menu.type == 'tag' %}bg-secondary
+                {% else %}bg-dark{% endif %}">
+                {% if menu.type == 'home' %}Accueil
+                {% elseif menu.type == 'page' %}Page
+                {% elseif menu.type == 'post' %}Article
+                {% elseif menu.type == 'category' %}Catégorie
+                {% elseif menu.type == 'tag' %}Tag
+                {% else %}Personnalisé{% endif %}
+            </span>
+        </td>
+        <td>
+            {% set computedUrl = menu.computedUrl %}
+            {% if computedUrl %}
+                <small><code>{{ computedUrl }}</code></small>
+            {% else %}
+                <span class="text-muted">-</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if menu.isActive %}
+                <span class="badge bg-success">Actif</span>
+            {% else %}
+                <span class="badge bg-danger">Inactif</span>
+            {% endif %}
+        </td>
+        <td>{{ menu.menuOrder }}</td>
+        <td>
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="{{ path('admin_menus_show', {'id': menu.id}) }}" 
+                   class="btn btn-outline-primary" title="Voir">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="{{ path('admin_menus_edit', {'id': menu.id}) }}" 
+                   class="btn btn-outline-secondary" title="Modifier">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <form method="post" action="{{ path('admin_menus_delete', {'id': menu.id}) }}" 
+                      class="d-inline" onsubmit="return confirm('Voulez-vous vraiment supprimer cet élément de menu ?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ menu.id) }}">
+                    <button type="submit" class="btn btn-outline-danger" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </td>
+    </tr>
+    
+    {# Render children recursively #}
+    {% for child in menu.children %}
+        {{ _self.render_menu_row(child, currentLanguage, level + 1) }}
+    {% endfor %}
+{% endmacro %}
+
+<script>
+function changeLocation(location) {
+    window.location.href = "{{ path('admin_menus_index') }}?location=" + location;
+}
+
+// Sortable functionality (basic implementation)
+// For production, you might want to use a library like SortableJS
+document.addEventListener('DOMContentLoaded', function() {
+    const tbody = document.getElementById('menu-sortable');
+    if (tbody && tbody.children.length > 0) {
+        // Enable drag and drop functionality here if needed
+        // This would require additional JavaScript libraries
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion - SymfPress{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .login-header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .login-body {
+            padding: 2rem;
+        }
+        .form-control {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="login-container d-flex align-items-center justify-content-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7">
+                <div class="login-card">
+                    <div class="login-header">
+                        <h2 class="mb-0">
+                            <i class="fas fa-blog me-2"></i>
+                            SymfPress
+                        </h2>
+                        <p class="mb-0 mt-2 opacity-75">Administration</p>
+                    </div>
+                    
+                    <div class="login-body">
+                        {% if error %}
+                            <div class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {{ error.messageKey|trans(error.messageData, 'security') }}
+                            </div>
+                        {% endif %}
+                        
+                        <form method="post">
+                            <div class="mb-3">
+                                <label for="inputEmail" class="form-label">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    Adresse email
+                                </label>
+                                <input type="email" 
+                                       value="{{ last_username }}" 
+                                       name="_username" 
+                                       id="inputEmail" 
+                                       class="form-control" 
+                                       autocomplete="email" 
+                                       required 
+                                       autofocus 
+                                       placeholder="admin@symfpress.local">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="inputPassword" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>
+                                    Mot de passe
+                                </label>
+                                <input type="password" 
+                                       name="_password" 
+                                       id="inputPassword" 
+                                       class="form-control" 
+                                       autocomplete="current-password" 
+                                       required 
+                                       placeholder="••••••••">
+                            </div>
+                            
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="remember_me" name="_remember_me" checked>
+                                <label class="form-check-label" for="remember_me">
+                                    Se souvenir de moi
+                                </label>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button class="btn btn-primary btn-login" type="submit">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Se connecter
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <a href="{{ path('frontend_home') }}" class="text-decoration-none">
+                                    <i class="fas fa-arrow-left me-1"></i>
+                                    Retour au site
+                                </a>
+                            </small>
+                        </div>
+                        
+                        <!-- Informations de connexion par défaut (à supprimer en production) -->
+                        {% if app.environment == 'dev' %}
+                            <div class="mt-4 p-3 bg-light rounded">
+                                <h6 class="text-muted mb-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Connexion par défaut (développement)
+                                </h6>
+                                <small class="text-muted">
+                                    <strong>Email :</strong> admin@symfpress.local<br>
+                                    <strong>Mot de passe :</strong> admin123
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <small class="text-white-50">
+                        &copy; {{ 'now'|date('Y') }} SymfPress - Propulsé par Symfony {{ constant('Symfony\\Component\\HttpKernel\\Kernel::VERSION') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

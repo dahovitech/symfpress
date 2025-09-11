@@ -1,0 +1,19 @@
+name: "Modern Blog"
+description: "Thème moderne et responsive pour blog avec design épuré"
+version: "1.0.0"
+author: "SymfPress Team"
+screenshot: "screenshot.png"
+supports:
+  - responsive-design
+  - custom-colors
+  - widgets
+  - multilingual
+  - dark-mode
+requirements:
+  php: ">=8.1"
+  symfony: ">=6.0"
+features:
+  - sidebar
+  - comments
+  - social-sharing
+  - seo-optimized

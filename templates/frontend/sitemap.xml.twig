@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    
+    {# Page d'accueil #}
+    <url>
+        <loc>{{ url('frontend_home') }}</loc>
+        <lastmod>{{ 'now'|date('Y-m-d') }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    
+    {# Page des articles #}
+    <url>
+        <loc>{{ url('frontend_posts') }}</loc>
+        <lastmod>{{ 'now'|date('Y-m-d') }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    {# Articles publiés #}
+    {% for post in posts %}
+        {% set translation = post.getTranslationForLanguage(currentLanguage) %}
+        {% if translation and post.status == 'published' %}
+            <url>
+                <loc>{{ url('frontend_post_show', {'slug': post.slug}) }}</loc>
+                <lastmod>{{ post.updatedAt ? post.updatedAt|date('Y-m-d') : post.publishedAt|date('Y-m-d') }}</lastmod>
+                <changefreq>weekly</changefreq>
+                <priority>0.7</priority>
+            </url>
+        {% endif %}
+    {% endfor %}
+    
+    {# Pages statiques #}
+    {% for page in pages %}
+        {% set translation = page.getTranslationForLanguage(currentLanguage) %}
+        {% if translation and page.status == 'published' %}
+            <url>
+                <loc>{{ url('frontend_page_show', {'slug': page.slug}) }}</loc>
+                <lastmod>{{ page.updatedAt ? page.updatedAt|date('Y-m-d') : page.publishedAt|date('Y-m-d') }}</lastmod>
+                <changefreq>monthly</changefreq>
+                <priority>0.6</priority>
+            </url>
+        {% endif %}
+    {% endfor %}
+    
+    {# Catégories #}
+    {% for category in categories %}
+        {% set translation = category.getTranslationForLanguage(currentLanguage) %}
+        {% if translation %}
+            <url>
+                <loc>{{ url('frontend_category_show', {'slug': category.slug}) }}</loc>
+                <lastmod>{{ 'now'|date('Y-m-d') }}</lastmod>
+                <changefreq>weekly</changefreq>
+                <priority>0.5</priority>
+            </url>
+        {% endif %}
+    {% endfor %}
+    
+    {# Tags #}
+    {% for tag in tags %}
+        {% set translation = tag.getTranslationForLanguage(currentLanguage) %}
+        {% if translation %}
+            <url>
+                <loc>{{ url('frontend_tag_show', {'slug': tag.slug}) }}</loc>
+                <lastmod>{{ 'now'|date('Y-m-d') }}</lastmod>
+                <changefreq>weekly</changefreq>
+                <priority>0.4</priority>
+            </url>
+        {% endif %}
+    {% endfor %}
+    
+</urlset>

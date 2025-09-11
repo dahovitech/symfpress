@@ -1,0 +1,12 @@
+name: "Widget de Démonstration"
+description: "Plugin de démonstration qui ajoute un widget personnalisé dans la sidebar"
+version: "1.0.0"
+author: "SymfPress Team"
+main_class: "DemoWidgetPlugin\\DemoWidgetPlugin"
+dependencies:
+  symfony: ">=6.0"
+supports:
+  - widgets
+  - hooks
+requirements:
+  php: ">=8.1"

@@ -1,0 +1,174 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Tags{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active">Tags</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Tags</h2>
+    <a href="{{ path('admin_tags_new') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouveau tag
+    </a>
+</div>
+
+<!-- Sélecteur de langue -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <label class="form-label mb-0">Langue d'affichage :</label>
+                <div class="dropdown d-inline-block ms-2">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-globe me-1"></i> {{ currentLanguage.name }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        {% for language in availableLanguages %}
+                            <li>
+                                <a class="dropdown-item {{ language == currentLanguage ? 'active' : '' }}" 
+                                   href="{{ path('admin_tags_index', {'language': language.code}) }}">
+                                    {{ language.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des tags -->
+<div class="card">
+    <div class="card-body">
+        {% if tags is empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun tag trouvé</h5>
+                <p class="text-muted">Commencez par créer votre premier tag pour organiser vos contenus.</p>
+                <a href="{{ path('admin_tags_new') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Créer un tag
+                </a>
+            </div>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Slug</th>
+                            <th>Couleur</th>
+                            <th>Articles</th>
+                            <th>Date de création</th>
+                            <th width="200">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tag in tags %}
+                            {% set translation = tag.getTranslationForLanguage(currentLanguage) %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if tag.color %}
+                                            <span class="badge me-2" style="background-color: {{ tag.color }}; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                        {% endif %}
+                                        <div>
+                                            <a href="{{ path('admin_tags_edit', {'id': tag.id}) }}" class="text-decoration-none fw-bold">
+                                                {{ translation ? translation.name : 'Tag #' ~ tag.id }}
+                                            </a>
+                                            {% if translation and translation.description %}
+                                                <div class="text-muted small">{{ translation.description|slice(0, 100) }}{% if translation.description|length > 100 %}...{% endif %}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <code class="text-muted">{{ tag.slug }}</code>
+                                </td>
+                                <td>
+                                    {% if tag.color %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge me-2" style="background-color: {{ tag.color }}; color: white; padding: 5px 10px;">{{ tag.color }}</span>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Aucune</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ tag.postCount }} article{{ tag.postCount > 1 ? 's' : '' }}</span>
+                                </td>
+                                <td>
+                                    <div>{{ tag.createdAt|date('d/m/Y') }}</div>
+                                    {% if tag.updatedAt %}
+                                        <small class="text-muted">Modifié le {{ tag.updatedAt|date('d/m/Y') }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ path('admin_tags_edit', {'id': tag.id}) }}" class="btn btn-sm btn-outline-primary" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        {% if tag.postCount == 0 and is_granted('ROLE_ADMIN') %}
+                                        <form method="POST" action="{{ path('admin_tags_delete', {'id': tag.id}) }}" class="d-inline" 
+                                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce tag ?')">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ tag.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger disabled" title="Impossible de supprimer : tag utilisé dans des articles">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Informations utiles -->
+{% if tags is not empty %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> Informations</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Total tags :</strong> {{ tags|length }}</p>
+                <p class="mb-2"><strong>Tags avec couleur :</strong> {{ tags|filter(tag => tag.color)|length }}</p>
+                <p class="mb-0"><strong>Langue affichée :</strong> {{ currentLanguage.name }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-1"></i> Conseils</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li>Utilisez des couleurs pour organiser visuellement vos tags</li>
+                    <li>Les tags sans articles peuvent être supprimés</li>
+                    <li>Pensez à traduire vos tags dans toutes les langues</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Répondre au Commentaire{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <!-- Navigation -->
+    <div class="mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('admin_comments_index') }}">Commentaires</a></li>
+                <li class="breadcrumb-item"><a href="{{ path('admin_comments_show', {id: parentComment.id}) }}">Détail</a></li>
+                <li class="breadcrumb-item active">Répondre</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">💬 Répondre au Commentaire</h1>
+        <div class="btn-group">
+            <a href="{{ path('admin_comments_show', {id: parentComment.id}) }}" class="btn btn-outline-secondary">
+                ← Annuler
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Commentaire original -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">💬 Commentaire original</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="avatar me-3">
+                            {% if parentComment.author %}
+                                <div class="avatar-circle bg-primary">{{ parentComment.authorName|first|upper }}</div>
+                            {% else %}
+                                <div class="avatar-circle bg-secondary">👤</div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ parentComment.authorName ?? 'Anonyme' }}</h6>
+                            <small class="text-muted">
+                                📅 {{ parentComment.createdAt|date('d/m/Y H:i') }}
+                                {% if parentComment.authorEmail %}
+                                    | 📧 {{ parentComment.authorEmail }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="comment-content">
+                        <p>{{ parentComment.content|nl2br }}</p>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            Sur : 
+                            {% if parentComment.post %}
+                                📄 <strong>{{ parentComment.contentTitle }}</strong> (Article)
+                            {% elseif parentComment.page %}
+                                📃 <strong>{{ parentComment.contentTitle }}</strong> (Page)
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Formulaire de réponse -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">✍️ Votre réponse</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Informations sur l'auteur (admin) -->
+                        <div class="alert alert-info">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-3">
+                                    <div class="avatar-circle bg-success">👤</div>
+                                </div>
+                                <div>
+                                    <strong>{{ app.user.displayName ?? app.user.email }}</strong><br>
+                                    <small>Administrateur - Cette réponse sera automatiquement approuvée</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Contenu de la réponse -->
+                        <div class="mb-3">
+                            <label for="content" class="form-label required">Contenu de votre réponse</label>
+                            <textarea name="content" id="content" class="form-control" rows="8" 
+                                      placeholder="Tapez votre réponse ici..." required
+                                      style="resize: vertical;"></textarea>
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    ℹ️ Vous répondez en tant qu'administrateur. La réponse sera visible publiquement.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{{ path('admin_comments_show', {id: parentComment.id}) }}" class="btn btn-outline-secondary">
+                                ❌ Annuler
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                💬 Publier la réponse
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Conseil de modération -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">💡 Conseils de modération</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <strong>✅ Être professionnel :</strong>
+                            <small class="d-block text-muted">Maintenez un ton courtois et professionnel</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>🎯 Être précis :</strong>
+                            <small class="d-block text-muted">Répondez directement aux points soulevés</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>🔗 Ajouter des liens :</strong>
+                            <small class="d-block text-muted">N'hésitez pas à renvoyer vers des ressources utiles</small>
+                        </li>
+                        <li>
+                            <strong>🛡️ Modérer si nécessaire :</strong>
+                            <small class="d-block text-muted">Si le commentaire original est inapproprié, traitez-le après avoir répondu</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Affichage des réponses existantes -->
+    {% if parentComment.replies is not empty %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">💬 Réponses existantes ({{ parentComment.replies|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for existingReply in parentComment.replies %}
+                    <div class="d-flex align-items-start mb-3 p-3 bg-light rounded">
+                        <div class="avatar me-3">
+                            {% if existingReply.author %}
+                                <div class="avatar-circle bg-info">{{ existingReply.authorName|first|upper }}</div>
+                            {% else %}
+                                <div class="avatar-circle bg-secondary">👤</div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-1">{{ existingReply.authorName ?? 'Anonyme' }}</h6>
+                                    <small class="text-muted">📅 {{ existingReply.createdAt|date('d/m/Y H:i') }}</small>
+                                </div>
+                                {% set statusClass = {
+                                    'pending': 'warning',
+                                    'approved': 'success', 
+                                    'spam': 'danger',
+                                    'trash': 'dark'
+                                } %}
+                                <span class="badge bg-{{ statusClass[existingReply.status] }}">
+                                    {{ existingReply.status|title }}
+                                </span>
+                            </div>
+                            <p class="mb-0">{{ existingReply.content|nl2br }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- CSS personnalisé -->
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.comment-content {
+    border-left: 4px solid #6c757d;
+    padding-left: 15px;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 0 8px 8px 0;
+}
+
+.required::after {
+    content: ' *';
+    color: #dc3545;
+}
+</style>
+{% endblock %}

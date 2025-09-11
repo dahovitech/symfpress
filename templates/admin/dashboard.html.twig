@@ -1,0 +1,516 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .border-left-dark {
+            border-left: 0.25rem solid #6c757d !important;
+        }
+        .border-left-light {
+            border-left: 0.25rem solid #f8f9fa !important;
+        }
+        .border-left-secondary {
+            border-left: 0.25rem solid #6c757d !important;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+    </style>
+{% endblock %}
+
+{% block admin_content %}
+<!-- Première ligne de statistiques -->
+<div class="row admin-stats mb-4">
+    <!-- Statistiques des articles -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Articles</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.posts.total }}</div>
+                        <div class="text-xs text-muted mt-1">
+                            {{ stats.posts.published }} publiés, {{ stats.posts.drafts }} brouillons
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-edit fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques des pages -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Pages</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pages.total }}</div>
+                        <div class="text-xs text-muted mt-1">
+                            {{ stats.pages.published }} publiées, {{ stats.pages.drafts }} brouillons
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-alt fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques des commentaires -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Commentaires</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.comments.total }}</div>
+                        <div class="text-xs text-muted mt-1">
+                            {{ stats.comments.pending }} en attente
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques des médias -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Médias</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.media.total }}</div>
+                        <div class="text-xs text-muted mt-1">
+                            {{ (stats.media.totalSize / 1024 / 1024)|number_format(1) }} MB utilisés
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-images fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deuxième ligne de statistiques -->
+<div class="row admin-stats mb-4">
+    <!-- Statistiques des utilisateurs -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-dark h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Utilisateurs</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.users.total }}</div>
+                        <div class="text-xs text-muted mt-1">
+                            {{ stats.users.active }} actifs
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-dark"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques des catégories -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-secondary h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Catégories</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.categories.total }}</div>
+                        <div class="text-xs text-muted mt-1">
+                            Organisation du contenu
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-folder fa-2x text-secondary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques des tags -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-light h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-muted text-uppercase mb-1">Tags</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.tags.total }}</div>
+                        <div class="text-xs text-muted mt-1">
+                            Étiquetage du contenu
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tags fa-2x text-muted"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques des menus -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Menus</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.menus.total }}</div>
+                        <div class="text-xs text-muted mt-1">
+                            {{ stats.menus.active }} actifs
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-bars fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenu récent -->
+<div class="row">
+    <!-- Articles récents -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Articles récents</h6>
+                <a href="{{ path('admin_posts_index') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Voir tout
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recentPosts is empty %}
+                    <p class="text-muted text-center">Aucun article récent</p>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Titre</th>
+                                    <th>Statut</th>
+                                    <th>Auteur</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for post in recentPosts %}
+                                    {% set translation = post.getTranslationForLanguage(currentLanguage) %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ path('admin_posts_edit', {'id': post.id}) }}" class="text-decoration-none">
+                                                {{ translation ? translation.title : 'Article #' ~ post.id }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge status-badge 
+                                                {% if post.status == 'published' %}bg-success
+                                                {% elseif post.status == 'draft' %}bg-secondary
+                                                {% else %}bg-warning{% endif %}">
+                                                {{ post.status|title }}
+                                            </span>
+                                        </td>
+                                        <td>{{ post.author.displayName }}</td>
+                                        <td>{{ post.createdAt|date('d/m/Y') }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Commentaires récents -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Commentaires récents</h6>
+                <a href="{{ path('admin_comments_index') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Voir tout
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recentComments is empty %}
+                    <p class="text-muted text-center">Aucun commentaire récent</p>
+                {% else %}
+                    {% for comment in recentComments %}
+                        <div class="d-flex mb-3 pb-3 border-bottom">
+                            <div class="flex-shrink-0">
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fw-bold">{{ comment.authorName }}</div>
+                                <div class="text-muted small">{{ comment.createdAt|date('d/m/Y H:i') }}</div>
+                                <div class="mt-1">{{ comment.content|length > 80 ? comment.content|slice(0, 80) ~ '...' : comment.content }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activité récente -->
+<div class="row mt-4">
+    <!-- Utilisateurs récents -->
+    <div class="col-xl-4 col-lg-4">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Utilisateurs récents</h6>
+                <a href="{{ path('admin_users_index') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Voir tout
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recentUsers is empty %}
+                    <p class="text-muted text-center">Aucun utilisateur récent</p>
+                {% else %}
+                    {% for user in recentUsers %}
+                        <div class="d-flex mb-2 pb-2 border-bottom">
+                            <div class="flex-shrink-0">
+                                <div class="bg-info rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; font-size: 12px;">
+                                    <span class="text-white fw-bold">{{ user.firstName|slice(0, 1)|upper }}{{ user.lastName|slice(0, 1)|upper }}</span>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fw-bold small">
+                                    <a href="{{ path('admin_users_edit', {'id': user.id}) }}" class="text-decoration-none">
+                                        {{ user.displayName }}
+                                    </a>
+                                </div>
+                                <div class="text-muted small">{{ user.email }}</div>
+                                <div class="text-muted small">{{ user.createdAt|date('d/m/Y') }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Catégories récentes -->
+    <div class="col-xl-4 col-lg-4">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Catégories récentes</h6>
+                <a href="{{ path('admin_categories_index') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Voir tout
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recentCategories is empty %}
+                    <p class="text-muted text-center">Aucune catégorie récente</p>
+                {% else %}
+                    {% for category in recentCategories %}
+                        {% set translation = category.getTranslationForLanguage(currentLanguage) %}
+                        <div class="d-flex mb-2 pb-2 border-bottom align-items-center">
+                            <div class="flex-shrink-0">
+                                {% if category.color %}
+                                    <span class="badge me-2" style="background-color: {{ category.color }}; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                {% else %}
+                                    <i class="fas fa-folder text-muted me-2"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small">
+                                    <a href="{{ path('admin_categories_edit', {'id': category.id}) }}" class="text-decoration-none">
+                                        {{ translation ? translation.name : 'Catégorie #' ~ category.id }}
+                                    </a>
+                                </div>
+                                <div class="text-muted small">{{ category.postCount }} article{{ category.postCount > 1 ? 's' : '' }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menus récents -->
+    <div class="col-xl-4 col-lg-4">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Menus récents</h6>
+                <a href="{{ path('admin_menus_index') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> Voir tout
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recentMenus is empty %}
+                    <p class="text-muted text-center">Aucun menu récent</p>
+                {% else %}
+                    {% for menu in recentMenus %}
+                        {% set translation = menu.getTranslationForLanguage(currentLanguage) %}
+                        <div class="d-flex mb-2 pb-2 border-bottom align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-bars text-primary me-2"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small">
+                                    <a href="{{ path('admin_menus_edit', {'id': menu.id}) }}" class="text-decoration-none">
+                                        {{ translation ? translation.title : menu.generateDefaultTitle(currentLanguage) }}
+                                    </a>
+                                    {% if not menu.isActive %}
+                                        <span class="badge bg-secondary ms-1">Inactif</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">{{ menu.location|title }} - {{ menu.type|title }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques avec Chart.js -->
+<div class="row mt-4">
+    <!-- Graphique de tendances du contenu -->
+    <div class="col-xl-8 col-lg-8">
+        <div class="card">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Évolution du contenu</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="contentTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Graphique de répartition des rôles -->
+    <div class="col-xl-4 col-lg-4">
+        <div class="card">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Répartition des utilisateurs</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="userRolesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Données pour les graphiques
+const contentData = {
+    articles: {{ stats.posts.total }},
+    pages: {{ stats.pages.total }},
+    comments: {{ stats.comments.total }},
+    categories: {{ stats.categories.total }},
+    tags: {{ stats.tags.total }},
+    menus: {{ stats.menus.total }}
+};
+
+// Graphique de tendances du contenu
+const ctxContent = document.getElementById('contentTrendChart').getContext('2d');
+const contentTrendChart = new Chart(ctxContent, {
+    type: 'bar',
+    data: {
+        labels: ['Articles', 'Pages', 'Commentaires', 'Catégories', 'Tags', 'Menus'],
+        datasets: [{
+            label: 'Nombre d\'éléments',
+            data: [
+                contentData.articles,
+                contentData.pages,
+                contentData.comments,
+                contentData.categories,
+                contentData.tags,
+                contentData.menus
+            ],
+            backgroundColor: [
+                '#4e73df',
+                '#1cc88a',
+                '#f6c23e',
+                '#6c757d',
+                '#e74a3b',
+                '#36b9cc'
+            ],
+            borderColor: [
+                '#3a5fcd',
+                '#17a673',
+                '#e6b32e',
+                '#5a6268',
+                '#d63031',
+                '#2db3cc'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Graphique de répartition des utilisateurs (données simulées pour l'exemple)
+const ctxUsers = document.getElementById('userRolesChart').getContext('2d');
+const userRolesChart = new Chart(ctxUsers, {
+    type: 'doughnut',
+    data: {
+        labels: ['Administrateurs', 'Éditeurs', 'Auteurs', 'Autres'],
+        datasets: [{
+            data: [2, 1, 1, Math.max(0, {{ stats.users.total }} - 4)],
+            backgroundColor: [
+                '#e74a3b',
+                '#f6c23e',
+                '#1cc88a',
+                '#6c757d'
+            ],
+            borderColor: '#fff',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

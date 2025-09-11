@@ -1,0 +1,202 @@
+{% extends 'frontend/base.html.twig' %}
+
+{% set translation = page.getTranslationForLanguage(currentLanguage) %}
+
+{% block title %}{{ translation.title }} - SymfPress{% endblock %}
+
+{% block meta_description %}{{ translation.metaDescription ?: translation.excerpt }}{% endblock %}
+{% block meta_keywords %}{{ translation.metaKeywords }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <article class="page-content">
+                <!-- Header de la page -->
+                <header class="mb-4">
+                    <h1 class="display-5 mb-3">{{ translation.title }}</h1>
+                    
+                    <div class="page-meta text-muted mb-3">
+                        <div class="d-flex flex-wrap align-items-center">
+                            <span class="me-3">
+                                <i class="fas fa-user me-1"></i>
+                                {{ page.author.displayName }}
+                            </span>
+                            {% if page.publishedAt %}
+                                <span class="me-3">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ page.publishedAt|date('d F Y') }}
+                                </span>
+                            {% endif %}
+                            {% if page.updatedAt and page.updatedAt != page.publishedAt %}
+                                <span>
+                                    <i class="fas fa-edit me-1"></i>
+                                    Mis à jour le {{ page.updatedAt|date('d F Y') }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </header>
+                
+                <!-- Image à la une -->
+                {% if page.featuredImage %}
+                    <div class="mb-4">
+                        <img src="{{ page.featuredImage.url }}" class="img-fluid rounded" alt="{{ translation.title }}">
+                        {% if page.featuredImage.caption %}
+                            <figcaption class="figure-caption text-center mt-2">{{ page.featuredImage.caption }}</figcaption>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <!-- Extrait -->
+                {% if translation.excerpt %}
+                    <div class="lead mb-4 p-3 bg-light rounded">
+                        {{ translation.excerpt }}
+                    </div>
+                {% endif %}
+                
+                <!-- Contenu principal -->
+                <div class="page-content-body">
+                    {{ translation.content|raw }}
+                </div>
+                
+                <!-- Partage social -->
+                <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                    <div>
+                        <strong>Partager cette page :</strong>
+                    </div>
+                    <div>
+                        <a href="https://twitter.com/intent/tweet?text={{ translation.title|url_encode }}&url={{ url('frontend_page_show', {'slug': page.slug})|url_encode }}" 
+                           target="_blank" class="btn btn-outline-info btn-sm me-2">
+                            <i class="fab fa-twitter"></i> Twitter
+                        </a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ url('frontend_page_show', {'slug': page.slug})|url_encode }}" 
+                           target="_blank" class="btn btn-outline-primary btn-sm me-2">
+                            <i class="fab fa-facebook-f"></i> Facebook
+                        </a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ url('frontend_page_show', {'slug': page.slug})|url_encode }}" 
+                           target="_blank" class="btn btn-outline-success btn-sm">
+                            <i class="fab fa-linkedin-in"></i> LinkedIn
+                        </a>
+                    </div>
+                </div>
+            </article>
+            
+            <!-- Commentaires (si activés) -->
+            {% if page.commentStatus and comments is defined %}
+                <section class="comments-section mt-5">
+                    <h4 class="mb-4">
+                        <i class="fas fa-comments me-2"></i>
+                        Commentaires ({{ comments|length }})
+                    </h4>
+                    
+                    <!-- Liste des commentaires -->
+                    {% if comments is not empty %}
+                        <div class="comments-list mb-5">
+                            {% for comment in comments %}
+                                <div class="comment mb-4 p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{{ comment.authorName }}</strong>
+                                                {% if comment.authorWebsite %}
+                                                    <a href="{{ comment.authorWebsite }}" target="_blank" class="text-muted ms-2">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ comment.createdAt|date('d/m/Y à H:i') }}</small>
+                                    </div>
+                                    <div class="comment-content ms-5">
+                                        {{ comment.content|nl2br }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Formulaire de commentaire -->
+                    <div class="comment-form">
+                        <h5 class="mb-3">Laisser un commentaire</h5>
+                        <form method="POST" action="#">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="author_name" class="form-label">Nom *</label>
+                                    <input type="text" class="form-control" id="author_name" name="author_name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="author_email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="author_email" name="author_email" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="author_website" class="form-label">Site web</label>
+                                <input type="url" class="form-control" id="author_website" name="author_website">
+                            </div>
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Commentaire *</label>
+                                <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                Publier le commentaire
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .page-content-body {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        .page-content-body h2, .page-content-body h3, .page-content-body h4 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        .page-content-body p {
+            margin-bottom: 1.5rem;
+        }
+        .page-content-body blockquote {
+            border-left: 4px solid #007bff;
+            padding-left: 1rem;
+            font-style: italic;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+        .page-content-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.375rem;
+        }
+        .page-content-body ul, .page-content-body ol {
+            margin-bottom: 1.5rem;
+        }
+        .page-content-body table {
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+        .page-content-body table th,
+        .page-content-body table td {
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+        }
+        .page-content-body table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+    </style>
+{% endblock %}

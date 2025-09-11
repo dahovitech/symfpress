@@ -1,0 +1,287 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Détail du Commentaire{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <!-- Navigation -->
+    <div class="mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('admin_comments_index') }}">Commentaires</a></li>
+                <li class="breadcrumb-item active">Détail</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">💬 Détail du Commentaire</h1>
+        <div class="btn-group">
+            <a href="{{ path('admin_comments_index') }}" class="btn btn-outline-secondary">
+                ← Retour à la liste
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Commentaire principal -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar me-3">
+                                {% if comment.author %}
+                                    <div class="avatar-circle bg-primary">{{ comment.authorName|first|upper }}</div>
+                                {% else %}
+                                    <div class="avatar-circle bg-secondary">👤</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h5 class="mb-1">{{ comment.authorName ?? 'Anonyme' }}</h5>
+                                <small class="text-muted">
+                                    {% if comment.authorEmail %}
+                                        📧 {{ comment.authorEmail }}
+                                    {% endif %}
+                                    {% if comment.authorWebsite %}
+                                        | 🌐 <a href="{{ comment.authorWebsite }}" target="_blank">{{ comment.authorWebsite }}</a>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Badge de statut -->
+                        {% set statusClass = {
+                            'pending': 'warning',
+                            'approved': 'success', 
+                            'spam': 'danger',
+                            'trash': 'dark'
+                        } %}
+                        {% set statusLabel = {
+                            'pending': '⏳ En attente',
+                            'approved': '✅ Approuvé', 
+                            'spam': '🚫 Spam',
+                            'trash': '🗑️ Corbeille'
+                        } %}
+                        <span class="badge bg-{{ statusClass[comment.status] }} fs-6">
+                            {{ statusLabel[comment.status] }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Contenu du commentaire -->
+                    <div class="comment-content mb-4">
+                        <p>{{ comment.content|nl2br }}</p>
+                    </div>
+                    
+                    <!-- Actions rapides -->
+                    <div class="d-flex gap-2 flex-wrap">
+                        {% if comment.status != 'approved' %}
+                            <form method="POST" action="{{ path('admin_comments_approve', {id: comment.id}) }}" style="display: inline;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('approve_comment_' ~ comment.id) }}">
+                                <button type="submit" class="btn btn-success">✅ Approuver</button>
+                            </form>
+                        {% endif %}
+                        
+                        {% if comment.status != 'trash' %}
+                            <form method="POST" action="{{ path('admin_comments_reject', {id: comment.id}) }}" style="display: inline;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('reject_comment_' ~ comment.id) }}">
+                                <button type="submit" class="btn btn-danger">❌ Rejeter</button>
+                            </form>
+                        {% endif %}
+                        
+                        {% if comment.status != 'spam' %}
+                            <form method="POST" action="{{ path('admin_comments_spam', {id: comment.id}) }}" style="display: inline;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('spam_comment_' ~ comment.id) }}">
+                                <button type="submit" class="btn btn-warning">🚫 Marquer comme spam</button>
+                            </form>
+                        {% endif %}
+                        
+                        {% if comment.status in ['spam', 'trash'] %}
+                            <form method="POST" action="{{ path('admin_comments_restore', {id: comment.id}) }}" style="display: inline;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('restore_comment_' ~ comment.id) }}">
+                                <button type="submit" class="btn btn-info">🔄 Restaurer</button>
+                            </form>
+                        {% endif %}
+                        
+                        <a href="{{ path('admin_comments_reply', {id: comment.id}) }}" class="btn btn-outline-primary">
+                            💬 Répondre
+                        </a>
+                        
+                        <form method="POST" action="{{ path('admin_comments_delete', {id: comment.id}) }}" 
+                              style="display: inline;" 
+                              onsubmit="return confirm('Supprimer définitivement ce commentaire ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_comment_' ~ comment.id) }}">
+                            <button type="submit" class="btn btn-outline-danger">🗑️ Supprimer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Réponses -->
+            {% if comment.replies is not empty %}
+            <div class="mt-4">
+                <h4>💬 Réponses ({{ comment.replies|length }})</h4>
+                {% for reply in comment.replies %}
+                <div class="card mt-3 ms-4">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-3">
+                                    {% if reply.author %}
+                                        <div class="avatar-circle bg-info">{{ reply.authorName|first|upper }}</div>
+                                    {% else %}
+                                        <div class="avatar-circle bg-secondary">👤</div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">{{ reply.authorName ?? 'Anonyme' }}</h6>
+                                    <small class="text-muted">📅 {{ reply.createdAt|date('d/m/Y H:i') }}</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-{{ statusClass[reply.status] }}">
+                                {{ statusLabel[reply.status] }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">{{ reply.content|nl2br }}</p>
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('admin_comments_show', {id: reply.id}) }}" class="btn btn-sm btn-outline-info">
+                                👁️ Voir détail
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Informations complémentaires -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 Informations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Date de création :</dt>
+                        <dd class="col-sm-6">{{ comment.createdAt|date('d/m/Y H:i:s') }}</dd>
+                        
+                        {% if comment.updatedAt %}
+                        <dt class="col-sm-6">Dernière modification :</dt>
+                        <dd class="col-sm-6">{{ comment.updatedAt|date('d/m/Y H:i:s') }}</dd>
+                        {% endif %}
+                        
+                        <dt class="col-sm-6">Type d'auteur :</dt>
+                        <dd class="col-sm-6">
+                            {% if comment.author %}
+                                👤 Utilisateur inscrit
+                            {% else %}
+                                👥 Visiteur anonyme
+                            {% endif %}
+                        </dd>
+                        
+                        {% if comment.authorIp %}
+                        <dt class="col-sm-6">Adresse IP :</dt>
+                        <dd class="col-sm-6"><code>{{ comment.authorIp }}</code></dd>
+                        {% endif %}
+                        
+                        {% if comment.userAgent %}
+                        <dt class="col-sm-6">User Agent :</dt>
+                        <dd class="col-sm-6"><small>{{ comment.userAgent|slice(0, 50) }}...</small></dd>
+                        {% endif %}
+                        
+                        <dt class="col-sm-6">Niveau de réponse :</dt>
+                        <dd class="col-sm-6">{{ comment.level }}</dd>
+                        
+                        <dt class="col-sm-6">Nombre de réponses :</dt>
+                        <dd class="col-sm-6">{{ comment.replies|length }}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <!-- Contenu associé -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">📄 Contenu associé</h5>
+                </div>
+                <div class="card-body">
+                    {% if comment.post %}
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <span class="badge bg-primary">📄 Article</span>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">{{ comment.contentTitle }}</h6>
+                                <small class="text-muted">ID: {{ comment.post.id }}</small>
+                            </div>
+                        </div>
+                    {% elseif comment.page %}
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <span class="badge bg-info">📃 Page</span>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">{{ comment.contentTitle }}</h6>
+                                <small class="text-muted">ID: {{ comment.page.id }}</small>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if comment.parent %}
+            <!-- Commentaire parent -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">🔗 Commentaire parent</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <div class="avatar me-2">
+                            <div class="avatar-circle bg-secondary" style="width: 30px; height: 30px; font-size: 12px;">
+                                {{ comment.parent.authorName|first|upper ?? '?' }}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ comment.parent.authorName ?? 'Anonyme' }}</h6>
+                            <p class="small mb-2">{{ comment.parent.content|slice(0, 100) }}...</p>
+                            <a href="{{ path('admin_comments_show', {id: comment.parent.id}) }}" class="btn btn-sm btn-outline-info">
+                                Voir le commentaire parent
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- CSS personnalisé -->
+<style>
+.avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.comment-content {
+    border-left: 4px solid #007bff;
+    padding-left: 20px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 0 8px 8px 0;
+}
+</style>
+{% endblock %}

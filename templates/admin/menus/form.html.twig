@@ -1,0 +1,362 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ isEdit ? 'Modifier l\'élément de menu' : 'Nouvel élément de menu' }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_menus_index') }}">Menus</a></li>
+        <li class="breadcrumb-item active">{{ isEdit ? 'Modifier' : 'Nouvel élément' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-md-8">
+        <form method="POST" class="needs-validation" novalidate>
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ isEdit ? 'Modifier l\'élément de menu' : 'Nouvel élément de menu' }}</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-language me-1"></i> {{ currentLanguage.name }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% for language in availableLanguages %}
+                                <li>
+                                    <a class="dropdown-item {{ language == currentLanguage ? 'active' : '' }}" 
+                                       href="{{ isEdit ? path('admin_menus_edit', {'id': menu.id, 'language': language.code}) : path('admin_menus_new', {'language': language.code}) }}">
+                                        {{ language.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% set translation = menu.getTranslationForLanguage(currentLanguage) %}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Titre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{{ translation ? translation.title : '' }}" required>
+                        <div class="invalid-feedback">Veuillez saisir un titre pour l'élément de menu.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2">{{ translation ? translation.description : '' }}</textarea>
+                        <div class="form-text">Description pour les lecteurs d'écran (optionnel).</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Type et contenu -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-link me-1"></i> Type et destination</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Type de lien <span class="text-danger">*</span></label>
+                        <select class="form-select" id="type" name="type" required onchange="toggleContentFields()">
+                            {% for typeValue, typeLabel in menuTypes %}
+                                <option value="{{ typeValue }}" {{ menu.type == typeValue ? 'selected' : '' }}>
+                                    {{ typeLabel }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Lien personnalisé -->
+                    <div class="mb-3" id="custom-url-field" style="display: none;">
+                        <label for="url" class="form-label">URL personnalisée</label>
+                        <input type="url" class="form-control" id="url" name="url" 
+                               value="{{ menu.url ?? '' }}" placeholder="https://">
+                        <div class="form-text">URL complète vers la destination.</div>
+                    </div>
+                    
+                    <!-- Sélection de page -->
+                    <div class="mb-3" id="page-field" style="display: none;">
+                        <label for="page_id" class="form-label">Page</label>
+                        <select class="form-select" id="page_id" name="page_id">
+                            <option value="">Sélectionner une page</option>
+                            {% for page in availableContent.pages %}
+                                {% set pageTranslation = page.getTranslationForLanguage(currentLanguage) %}
+                                <option value="{{ page.id }}" 
+                                        {{ menu.page and page.id == menu.page.id ? 'selected' : '' }}>
+                                    {{ pageTranslation ? pageTranslation.title : 'Page #' ~ page.id }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Sélection d'article -->
+                    <div class="mb-3" id="post-field" style="display: none;">
+                        <label for="post_id" class="form-label">Article</label>
+                        <select class="form-select" id="post_id" name="post_id">
+                            <option value="">Sélectionner un article</option>
+                            {% for post in availableContent.posts %}
+                                {% set postTranslation = post.getTranslationForLanguage(currentLanguage) %}
+                                <option value="{{ post.id }}" 
+                                        {{ menu.post and post.id == menu.post.id ? 'selected' : '' }}>
+                                    {{ postTranslation ? postTranslation.title : 'Article #' ~ post.id }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Sélection de catégorie -->
+                    <div class="mb-3" id="category-field" style="display: none;">
+                        <label for="category_id" class="form-label">Catégorie</label>
+                        <select class="form-select" id="category_id" name="category_id">
+                            <option value="">Sélectionner une catégorie</option>
+                            {% for category in availableContent.categories %}
+                                {% set categoryTranslation = category.getTranslationForLanguage(currentLanguage) %}
+                                <option value="{{ category.id }}" 
+                                        {{ menu.category and category.id == menu.category.id ? 'selected' : '' }}>
+                                    {% for i in 0..category.level %}
+                                        {% if i > 0 %}—{% endif %}
+                                    {% endfor %}
+                                    {{ categoryTranslation ? categoryTranslation.name : 'Catégorie #' ~ category.id }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Sélection de tag -->
+                    <div class="mb-3" id="tag-field" style="display: none;">
+                        <label for="tag_id" class="form-label">Tag</label>
+                        <select class="form-select" id="tag_id" name="tag_id">
+                            <option value="">Sélectionner un tag</option>
+                            {% for tag in availableContent.tags %}
+                                {% set tagTranslation = tag.getTranslationForLanguage(currentLanguage) %}
+                                <option value="{{ tag.id }}" 
+                                        {{ menu.tag and tag.id == menu.tag.id ? 'selected' : '' }}>
+                                    {{ tagTranslation ? tagTranslation.name : 'Tag #' ~ tag.id }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Paramètres avancés -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-cog me-1"></i> Paramètres avancés</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="location" class="form-label">Emplacement</label>
+                                <select class="form-select" id="location" name="location">
+                                    {% for locationKey, locationLabel in locations %}
+                                        <option value="{{ locationKey }}" 
+                                                {{ menu.location == locationKey ? 'selected' : '' }}>
+                                            {{ locationLabel }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="parent_id" class="form-label">Élément parent</label>
+                                <select class="form-select" id="parent_id" name="parent_id">
+                                    <option value="">Aucun (élément racine)</option>
+                                    {% for parent in availableParents %}
+                                        {% set parentTranslation = parent.getTranslationForLanguage(currentLanguage) %}
+                                        <option value="{{ parent.id }}" 
+                                                {{ menu.parent and parent.id == menu.parent.id ? 'selected' : '' }}>
+                                            {% for i in 0..parent.level %}
+                                                {% if i > 0 %}—{% endif %}
+                                            {% endfor %}
+                                            {{ parentTranslation ? parentTranslation.title : parent.generateDefaultTitle(currentLanguage) }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="menu_order" class="form-label">Ordre d'affichage</label>
+                                <input type="number" class="form-control" id="menu_order" name="menu_order" 
+                                       value="{{ menu.menuOrder ?? 0 }}" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="target" class="form-label">Cible</label>
+                                <select class="form-select" id="target" name="target">
+                                    <option value="_self" {{ menu.target == '_self' ? 'selected' : '' }}>Même fenêtre</option>
+                                    <option value="_blank" {{ menu.target == '_blank' ? 'selected' : '' }}>Nouvelle fenêtre</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="css_class" class="form-label">Classe CSS</label>
+                                <input type="text" class="form-control" id="css_class" name="css_class" 
+                                       value="{{ menu.cssClass ?? '' }}" placeholder="ma-classe">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                               {{ menu.isActive ?? true ? 'checked' : '' }}>
+                        <label class="form-check-label" for="is_active">
+                            Élément actif
+                        </label>
+                        <div class="form-text">Les éléments inactifs ne s'affichent pas dans le menu.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ path('admin_menus_index', {'location': menu.location ?? 'primary'}) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {{ isEdit ? 'Modifier' : 'Créer' }}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Aperçu -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-eye me-1"></i> Aperçu</h6>
+            </div>
+            <div class="card-body">
+                <div class="menu-preview">
+                    <a href="#" class="nav-link" id="menu-preview-link">
+                        <span id="menu-preview-title">{{ translation ? translation.title : 'Titre du menu' }}</span>
+                    </a>
+                </div>
+                <div class="form-text">Aperçu de l'élément dans le menu</div>
+            </div>
+        </div>
+        
+        <!-- Informations -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> Informations</h6>
+            </div>
+            <div class="card-body">
+                {% if isEdit %}
+                <p class="mb-2"><strong>Type :</strong> 
+                    {% if menu.type == 'home' %}Accueil
+                    {% elseif menu.type == 'page' %}Page
+                    {% elseif menu.type == 'post' %}Article
+                    {% elseif menu.type == 'category' %}Catégorie
+                    {% elseif menu.type == 'tag' %}Tag
+                    {% else %}Personnalisé{% endif %}
+                </p>
+                <p class="mb-2"><strong>Emplacement :</strong> {{ locations[menu.location] ?? menu.location }}</p>
+                <hr>
+                <p class="mb-1"><strong>Créé le :</strong></p>
+                <small class="text-muted">{{ menu.createdAt|date('d/m/Y H:i') }}</small>
+                {% if menu.updatedAt %}
+                <p class="mb-1 mt-2"><strong>Modifié le :</strong></p>
+                <small class="text-muted">{{ menu.updatedAt|date('d/m/Y H:i') }}</small>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">Nouvel élément - les informations apparaitront après la création.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Aide -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-question-circle me-1"></i> Aide</h6>
+            </div>
+            <div class="card-body">
+                <h6>Types de liens</h6>
+                <p class="small text-muted mb-3">Choisissez le type approprié selon la destination souhaitée.</p>
+                
+                <h6>Hiérarchie</h6>
+                <p class="small text-muted mb-3">Utilisez les éléments parents pour créer des sous-menus.</p>
+                
+                <h6>Ordre</h6>
+                <p class="small text-muted mb-0">L'ordre détermine la position dans le menu (0 = premier).</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validation du formulaire
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Afficher/masquer les champs selon le type
+function toggleContentFields() {
+    const type = document.getElementById('type').value;
+    
+    // Masquer tous les champs
+    document.getElementById('custom-url-field').style.display = 'none';
+    document.getElementById('page-field').style.display = 'none';
+    document.getElementById('post-field').style.display = 'none';
+    document.getElementById('category-field').style.display = 'none';
+    document.getElementById('tag-field').style.display = 'none';
+    
+    // Afficher le champ approprié
+    switch(type) {
+        case 'custom':
+            document.getElementById('custom-url-field').style.display = 'block';
+            break;
+        case 'page':
+            document.getElementById('page-field').style.display = 'block';
+            break;
+        case 'post':
+            document.getElementById('post-field').style.display = 'block';
+            break;
+        case 'category':
+            document.getElementById('category-field').style.display = 'block';
+            break;
+        case 'tag':
+            document.getElementById('tag-field').style.display = 'block';
+            break;
+    }
+}
+
+// Mettre à jour l'aperçu
+function updatePreview() {
+    const title = document.getElementById('title').value || 'Titre du menu';
+    document.getElementById('menu-preview-title').textContent = title;
+}
+
+// Initialiser
+document.addEventListener('DOMContentLoaded', function() {
+    toggleContentFields();
+    updatePreview();
+    
+    // Écouter les changements
+    document.getElementById('title').addEventListener('input', updatePreview);
+});
+</script>
+{% endblock %}

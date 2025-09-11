@@ -1,0 +1,331 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Sélecteur de Médias{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 mb-0">📁 Sélecteur de Médias</h1>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="fas fa-plus me-1"></i>Ajouter
+            </button>
+            {% if multiple %}
+                <button type="button" class="btn btn-primary" id="confirm-selection" style="display: none;">
+                    <i class="fas fa-check me-1"></i>Valider la sélection
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filtres rapides -->
+    <div class="mb-3">
+        <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="typeFilter" id="type-all" value="all" {{ type == 'all' ? 'checked' : '' }}>
+            <label class="btn btn-outline-primary" for="type-all">Tous</label>
+            
+            <input type="radio" class="btn-check" name="typeFilter" id="type-images" value="images" {{ type == 'images' ? 'checked' : '' }}>
+            <label class="btn btn-outline-primary" for="type-images">Images</label>
+            
+            <input type="radio" class="btn-check" name="typeFilter" id="type-documents" value="documents" {{ type == 'documents' ? 'checked' : '' }}>
+            <label class="btn btn-outline-primary" for="type-documents">Documents</label>
+        </div>
+    </div>
+
+    {% if medias is empty %}
+        <div class="text-center py-5">
+            <i class="fas fa-folder-open text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">Aucun média disponible</h5>
+            <p class="text-muted mb-3">Commencez par uploader des fichiers.</p>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="fas fa-cloud-upload-alt me-2"></i>Uploader des fichiers
+            </button>
+        </div>
+    {% else %}
+        <!-- Grille de sélection -->
+        <div class="row g-3" id="media-selector-grid">
+            {% for media in medias %}
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <div class="media-selector-item card h-100 {{ multiple ? 'selectable-multiple' : 'selectable-single' }}" 
+                     data-media-id="{{ media.id }}"
+                     data-media-url="{{ media.url }}"
+                     data-media-name="{{ media.originalName }}"
+                     data-media-alt="{{ media.alt }}"
+                     data-media-width="{{ media.width }}"
+                     data-media-height="{{ media.height }}"
+                     data-media-type="{{ media.mimeType }}"
+                     data-media-is-image="{{ media.isImage ? 'true' : 'false' }}"
+                     data-media-file-size="{{ media.formattedFileSize }}"
+                     data-media-thumbnail-url="{{ media.thumbnailUrl ?? media.url }}">
+                    
+                    <div class="position-relative">
+                        {% if multiple %}
+                        <!-- Checkbox pour sélection multiple -->
+                        <div class="position-absolute top-0 start-0 p-2">
+                            <input class="form-check-input media-selector-checkbox" type="checkbox" 
+                                   value="{{ media.id }}">
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Indicateur de sélection -->
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <div class="selection-indicator" style="display: none;">
+                                <i class="fas fa-check-circle text-success bg-white rounded-circle"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Aperçu -->
+                        <div class="media-preview" style="height: 120px; overflow: hidden; cursor: pointer;">
+                            {% if media.isImage %}
+                                <img src="{{ media.url }}" 
+                                     alt="{{ media.alt ?? media.originalName }}" 
+                                     class="w-100 h-100" 
+                                     style="object-fit: cover;">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                                    {% if media.isPdf %}
+                                        <i class="fas fa-file-pdf text-danger" style="font-size: 2rem;"></i>
+                                    {% elseif media.isVideo %}
+                                        <i class="fas fa-file-video text-primary" style="font-size: 2rem;"></i>
+                                    {% elseif media.isAudio %}
+                                        <i class="fas fa-file-audio text-success" style="font-size: 2rem;"></i>
+                                    {% else %}
+                                        <i class="fas fa-file text-secondary" style="font-size: 2rem;"></i>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Informations -->
+                    <div class="card-body p-2">
+                        <h6 class="card-title mb-1 small" title="{{ media.originalName }}">
+                            {{ media.originalName|slice(0, 15) }}{% if media.originalName|length > 15 %}...{% endif %}
+                        </h6>
+                        <small class="text-muted">{{ media.formattedFileSize }}</small>
+                        {% if media.width and media.height %}
+                            <small class="text-muted d-block">{{ media.width }}x{{ media.height }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal d'upload -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Uploader des fichiers</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="quick-dropzone" class="border border-dashed border-2 rounded p-4 text-center">
+                    <i class="fas fa-cloud-upload-alt text-primary mb-2" style="font-size: 2rem;"></i>
+                    <p class="mb-2">Glissez-déposez vos fichiers ici</p>
+                    <button type="button" class="btn btn-primary btn-sm" id="quick-browse">Parcourir</button>
+                    <input type="file" id="quick-file-input" multiple style="display: none;">
+                </div>
+                <div id="quick-upload-results" class="mt-3" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS personnalisé -->
+<style>
+.media-selector-item {
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.media-selector-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.media-selector-item.selected {
+    border-color: #0d6efd;
+    background-color: #f8f9ff;
+}
+
+.media-preview img {
+    transition: transform 0.2s;
+}
+
+.media-selector-item:hover .media-preview img {
+    transform: scale(1.05);
+}
+
+.selection-indicator {
+    font-size: 1.2rem;
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isMultiple = {{ multiple ? 'true' : 'false' }};
+    const selectedItems = new Set();
+    const confirmBtn = document.getElementById('confirm-selection');
+    
+    // Gestion de la sélection
+    document.querySelectorAll('.media-selector-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            const mediaId = this.dataset.mediaId;
+            
+            if (isMultiple) {
+                // Sélection multiple
+                const checkbox = this.querySelector('.media-selector-checkbox');
+                const indicator = this.querySelector('.selection-indicator');
+                
+                if (this.classList.contains('selected')) {
+                    // Désélectionner
+                    this.classList.remove('selected');
+                    checkbox.checked = false;
+                    indicator.style.display = 'none';
+                    selectedItems.delete(mediaId);
+                } else {
+                    // Sélectionner
+                    this.classList.add('selected');
+                    checkbox.checked = true;
+                    indicator.style.display = 'block';
+                    selectedItems.add(mediaId);
+                }
+                
+                // Afficher/masquer le bouton de confirmation
+                confirmBtn.style.display = selectedItems.size > 0 ? 'block' : 'none';
+                confirmBtn.textContent = `Valider (${selectedItems.size})`;
+                
+            } else {
+                // Sélection simple - retourner immédiatement
+                selectSingleMedia(this);
+            }
+        });
+    });
+    
+    // Gestion des checkboxes
+    if (isMultiple) {
+        document.querySelectorAll('.media-selector-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                const item = this.closest('.media-selector-item');
+                item.click();
+            });
+        });
+        
+        // Bouton de confirmation pour sélection multiple
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function() {
+                const selectedMedias = [];
+                selectedItems.forEach(mediaId => {
+                    const item = document.querySelector(`[data-media-id="${mediaId}"]`);
+                    selectedMedias.push(getMediaData(item));
+                });
+                
+                // Envoyer les données au parent
+                if (window.parent && window.parent.receiveSelectedMedias) {
+                    window.parent.receiveSelectedMedias(selectedMedias);
+                } else {
+                    console.log('Medias sélectionnés:', selectedMedias);
+                }
+            });
+        }
+    }
+    
+    function selectSingleMedia(item) {
+        const mediaData = getMediaData(item);
+        
+        // Envoyer au parent
+        if (window.parent && window.parent.receiveSelectedMedia) {
+            window.parent.receiveSelectedMedia(mediaData);
+        } else {
+            console.log('Media sélectionné:', mediaData);
+        }
+    }
+    
+    function getMediaData(item) {
+        return {
+            id: item.dataset.mediaId,
+            url: item.dataset.mediaUrl,
+            originalName: item.dataset.mediaName,
+            alt: item.dataset.mediaAlt,
+            width: item.dataset.mediaWidth,
+            height: item.dataset.mediaHeight,
+            mimeType: item.dataset.mediaType,
+            isImage: item.dataset.mediaIsImage === 'true',
+            fileSize: item.dataset.mediaFileSize,
+            thumbnailUrl: item.dataset.mediaThumbnailUrl
+        };
+    }
+    
+    // Filtres de type
+    document.querySelectorAll('input[name="typeFilter"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('type', this.value);
+            window.location.href = currentUrl.toString();
+        });
+    });
+    
+    // Upload rapide
+    const quickDropzone = document.getElementById('quick-dropzone');
+    const quickFileInput = document.getElementById('quick-file-input');
+    const quickBrowse = document.getElementById('quick-browse');
+    const quickResults = document.getElementById('quick-upload-results');
+    
+    quickBrowse.addEventListener('click', () => quickFileInput.click());
+    
+    quickFileInput.addEventListener('change', function() {
+        uploadFiles(this.files);
+    });
+    
+    quickDropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('border-primary');
+    });
+    
+    quickDropzone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('border-primary');
+    });
+    
+    quickDropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('border-primary');
+        uploadFiles(e.dataTransfer.files);
+    });
+    
+    function uploadFiles(files) {
+        const formData = new FormData();
+        Array.from(files).forEach(file => formData.append('files[]', file));
+        
+        quickResults.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Upload en cours...</div>';
+        quickResults.style.display = 'block';
+        
+        fetch('{{ path('admin_media_upload') }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.uploaded_count > 0) {
+                quickResults.innerHTML = `<div class="alert alert-success">${data.uploaded_count} fichier(s) uploadé(s)</div>`;
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                quickResults.innerHTML = '<div class="alert alert-danger">Erreur d\'upload</div>';
+            }
+        })
+        .catch(error => {
+            quickResults.innerHTML = '<div class="alert alert-danger">Erreur réseau</div>';
+        });
+    }
+});
+</script>
+{% endblock %}

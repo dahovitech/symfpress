@@ -1,0 +1,300 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Administration - SymfPress{% endblock %}
+
+{% block body_class %}admin-layout{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .admin-sidebar {
+            min-height: 100vh;
+            background-color: #2c3e50;
+            color: white;
+        }
+        .admin-sidebar .nav-link {
+            color: #bdc3c7;
+            padding: 12px 20px;
+            border-radius: 0;
+        }
+        .admin-sidebar .nav-link:hover,
+        .admin-sidebar .nav-link.active {
+            background-color: #34495e;
+            color: white;
+        }
+        .admin-content {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+        .admin-header {
+            background-color: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 0;
+        }
+        .language-selector .dropdown-toggle {
+            background: none;
+            border: 1px solid #6c757d;
+            color: #6c757d;
+            padding: 5px 15px;
+            font-size: 0.875rem;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #495057;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .admin-stats .card {
+            transition: transform 0.2s;
+        }
+        .admin-stats .card:hover {
+            transform: translateY(-2px);
+        }
+        .submenu {
+            display: none;
+            padding-left: 20px;
+        }
+        .submenu.show {
+            display: block;
+        }
+        .submenu .nav-link {
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
+        .nav-link.has-submenu {
+            position: relative;
+        }
+        .nav-link.has-submenu:after {
+            content: '\f078';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 15px;
+            transition: transform 0.3s;
+        }
+        .nav-link.has-submenu.expanded:after {
+            transform: rotate(180deg);
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 admin-sidebar">
+            <div class="position-sticky pt-3">
+                <div class="text-center mb-4">
+                    <h4 class="mb-0">SymfPress</h4>
+                    <small class="text-muted">Administration</small>
+                </div>
+                
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_dashboard' ? 'active' : '' }}" href="{{ path('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Tableau de bord
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_posts' ? 'active' : '' }}" href="{{ path('admin_posts_index') }}">
+                            <i class="fas fa-edit me-2"></i> Articles
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_pages' ? 'active' : '' }}" href="{{ path('admin_pages_index') }}">
+                            <i class="fas fa-file-alt me-2"></i> Pages
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_media' ? 'active' : '' }}" href="{{ path('admin_media_index') }}">
+                            <i class="fas fa-images me-2"></i> Médias
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_comments' ? 'active' : '' }}" href="{{ path('admin_comments_index') }}">
+                            <i class="fas fa-comments me-2"></i> Commentaires
+                        </a>
+                    </li>
+                    
+                    {% if is_granted('ROLE_ADMIN') %}
+                    <hr class="my-3">
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_categories' ? 'active' : '' }}" href="{{ path('admin_categories_index') }}">
+                            <i class="fas fa-folder me-2"></i> Catégories
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_tags' ? 'active' : '' }}" href="{{ path('admin_tags_index') }}">
+                            <i class="fas fa-tags me-2"></i> Tags
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_menus' ? 'active' : '' }}" href="{{ path('admin_menus_index') }}">
+                            <i class="fas fa-bars me-2"></i> Menus
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_users' ? 'active' : '' }}" href="{{ path('admin_users_index') }}">
+                            <i class="fas fa-users me-2"></i> Utilisateurs
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') starts with 'admin_languages' ? 'active' : '' }}" href="{{ path('admin_languages_index') }}">
+                            <i class="fas fa-language me-2"></i> Langues
+                        </a>
+                    </li>
+                    
+                    <!-- Extensions -->
+                    <li class="nav-item">
+                        <a class="nav-link has-submenu {{ app.request.get('_route') starts with 'admin_plugins' or app.request.get('_route') starts with 'admin_themes' ? 'active' : '' }}" href="#" onclick="toggleSubmenu(this, event)">
+                            <i class="fas fa-puzzle-piece me-2"></i> Extensions
+                        </a>
+                        <ul class="nav flex-column submenu {{ app.request.get('_route') starts with 'admin_plugins' or app.request.get('_route') starts with 'admin_themes' ? 'show' : '' }}">
+                            <li class="nav-item">
+                                <a class="nav-link {{ app.request.get('_route') starts with 'admin_plugins' ? 'active' : '' }}" href="{{ path('admin_plugins_index') }}">
+                                    <i class="fas fa-puzzle-piece me-2"></i> Plugins
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ app.request.get('_route') starts with 'admin_themes' ? 'active' : '' }}" href="{{ path('admin_themes_index') }}">
+                                    <i class="fas fa-paint-brush me-2"></i> Thèmes
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <hr class="my-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('frontend_home') }}" target="_blank">
+                            <i class="fas fa-external-link-alt me-2"></i> Voir le site
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('app_logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i> Déconnexion
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 admin-content">
+            <!-- Header -->
+            <div class="admin-header">
+                <div class="d-flex justify-content-between align-items-center px-3">
+                    <div>
+                        <h1 class="h4 mb-0">{% block page_title %}Administration{% endblock %}</h1>
+                        {% block breadcrumb %}{% endblock %}
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <!-- Sélecteur de langue -->
+                        {% if availableLanguages is defined and currentLanguage is defined and availableLanguages|length > 1 %}
+                        <div class="language-selector me-3">
+                            <div class="dropdown">
+                                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-language me-1"></i>
+                                    {{ currentLanguage.name }}
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% for language in availableLanguages %}
+                                        <li>
+                                            <a class="dropdown-item {{ language.id == currentLanguage.id ? 'active' : '' }}" 
+                                               href="{{ path('admin_switch_language', {'code': language.code}) }}">
+                                                {{ language.name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Utilisateur connecté -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>
+                                {{ app.user.displayName }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#">Profil</a></li>
+                                <li><a class="dropdown-item" href="#">Paramètres</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ path('app_logout') }}">Déconnexion</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Flash messages -->
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible fade show m-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+            
+            <!-- Page content -->
+            <div class="p-3">
+                {% block admin_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function toggleSubmenu(element, event) {
+    event.preventDefault();
+    
+    const submenu = element.nextElementSibling;
+    const isExpanded = submenu.classList.contains('show');
+    
+    if (isExpanded) {
+        submenu.classList.remove('show');
+        element.classList.remove('expanded');
+    } else {
+        submenu.classList.add('show');
+        element.classList.add('expanded');
+    }
+}
+
+// Auto-expand submenu if current route is active
+document.addEventListener('DOMContentLoaded', function() {
+    const activeSubmenuLinks = document.querySelectorAll('.submenu .nav-link.active');
+    activeSubmenuLinks.forEach(function(link) {
+        const submenu = link.closest('.submenu');
+        const parentLink = submenu.previousElementSibling;
+        if (submenu && parentLink) {
+            submenu.classList.add('show');
+            parentLink.classList.add('expanded');
+        }
+    });
+});
+</script>
+{% endblock %}

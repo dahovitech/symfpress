@@ -1,0 +1,275 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ isEdit ? 'Modifier l\'article' : 'Nouvel article' }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_posts_index') }}">Articles</a></li>
+        <li class="breadcrumb-item active">{{ isEdit ? 'Modifier' : 'Nouvel article' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .language-tabs .nav-link {
+            border: 1px solid #dee2e6;
+            border-bottom: none;
+        }
+        .language-tabs .nav-link.active {
+            border-color: #0d6efd #0d6efd #fff #0d6efd;
+            background-color: #fff;
+        }
+        .translation-content {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            padding: 1rem;
+            border-radius: 0 0 0.375rem 0.375rem;
+        }
+        .required-field {
+            color: #dc3545;
+        }
+    </style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-md-8">
+        {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': true}}) }}
+        
+        <!-- Informations générales -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ isEdit ? 'Modifier l\'article' : 'Nouvel article' }}</h5>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-language me-1"></i> {{ currentLanguage.name }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% for language in availableLanguages %}
+                            <li>
+                                <a class="dropdown-item {{ language == currentLanguage ? 'active' : '' }}" 
+                                   href="{{ isEdit ? path('admin_posts_edit', {'id': post.id, 'language': language.code}) : path('admin_posts_new', {'language': language.code}) }}">
+                                    {{ language.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        {{ form_row(form['translation_' ~ currentLanguage.code ~ '_title']) }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form_row(form.slug) }}
+                    </div>
+                </div>
+                
+                {{ form_row(form['translation_' ~ currentLanguage.code ~ '_excerpt']) }}
+            </div>
+        </div>
+
+        <!-- Contenu de l'article avec onglets multilingues -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-edit me-1"></i> Contenu de l'article</h6>
+            </div>
+            <div class="card-body">
+                {% if availableLanguages|length > 1 %}
+                    <!-- Onglets des langues -->
+                    <ul class="nav nav-tabs language-tabs" id="languageTabs" role="tablist">
+                        {% for language in availableLanguages %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link {{ language == currentLanguage ? 'active' : '' }}" 
+                                        id="lang-{{ language.code }}-tab" 
+                                        data-bs-toggle="tab" 
+                                        data-bs-target="#lang-{{ language.code }}" 
+                                        type="button" role="tab">
+                                    {{ language.name }}
+                                    {% if language == currentLanguage %}
+                                        <span class="required-field">*</span>
+                                    {% endif %}
+                                </button>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <!-- Contenu des onglets -->
+                    <div class="tab-content translation-content" id="languageTabContent">
+                        {% for language in availableLanguages %}
+                            <div class="tab-pane fade {{ language == currentLanguage ? 'show active' : '' }}" 
+                                 id="lang-{{ language.code }}" 
+                                 role="tabpanel">
+                                
+                                {{ form_row(form['translation_' ~ language.code ~ '_content']) }}
+                                
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm btn-add-media" data-target="translation_{{ language.code }}_content">
+                                        <i class="fas fa-plus me-1"></i> Ajouter un média
+                                    </button>
+                                </div>
+                                
+                                <!-- Métadonnées SEO -->
+                                <div class="mt-4">
+                                    <h6 class="border-bottom pb-2 mb-3">Métadonnées SEO</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            {{ form_row(form['translation_' ~ language.code ~ '_metaTitle']) }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            {{ form_row(form['translation_' ~ language.code ~ '_metaKeywords']) }}
+                                        </div>
+                                    </div>
+                                    {{ form_row(form['translation_' ~ language.code ~ '_metaDescription']) }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Mode monolingue -->
+                    {{ form_row(form['translation_' ~ currentLanguage.code ~ '_content']) }}
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm btn-add-media" data-target="translation_{{ currentLanguage.code }}_content">
+                            <i class="fas fa-plus me-1"></i> Ajouter un média
+                        </button>
+                    </div>
+                    
+                    <!-- Métadonnées SEO -->
+                    <div class="mt-4">
+                        <h6 class="border-bottom pb-2 mb-3">Métadonnées SEO</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form_row(form['translation_' ~ currentLanguage.code ~ '_metaTitle']) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form_row(form['translation_' ~ currentLanguage.code ~ '_metaKeywords']) }}
+                            </div>
+                        </div>
+                        {{ form_row(form['translation_' ~ currentLanguage.code ~ '_metaDescription']) }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {{ form_end(form) }}
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Statut et publication -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-cogs me-1"></i> Publication</h6>
+            </div>
+            <div class="card-body">
+                {{ form_row(form.status) }}
+                {{ form_row(form.publishedAt) }}
+                
+                <div class="row">
+                    <div class="col-6">
+                        {{ form_row(form.commentStatus) }}
+                    </div>
+                    <div class="col-6">
+                        {{ form_row(form.isFeatured) }}
+                    </div>
+                </div>
+                
+                {{ form_row(form.menuOrder) }}
+                
+                <div class="d-grid gap-2 mt-3">
+                    {{ form_widget(form.save) }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Image mise en avant -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-image me-1"></i> Image mise en avant</h6>
+            </div>
+            <div class="card-body">
+                {{ form_row(form.featuredImage) }}
+            </div>
+        </div>
+        
+        <!-- Catégories -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-folder me-1"></i> Catégories</h6>
+            </div>
+            <div class="card-body">
+                {{ form_row(form.categories) }}
+            </div>
+        </div>
+        
+        <!-- Tags -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-tags me-1"></i> Tags</h6>
+            </div>
+            <div class="card-body">
+                {{ form_row(form.tags) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de sélection de médias -->
+<div class="modal fade" id="mediaModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sélectionner un média</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Le contenu sera chargé dynamiquement -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gestion des onglets de langues
+            const languageTabs = document.querySelectorAll('#languageTabs button[data-bs-toggle="tab"]');
+            languageTabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (event) {
+                    console.log('Onglet activé:', event.target.getAttribute('data-bs-target'));
+                });
+            });
+            
+            // Gestion des boutons d'ajout de média
+            const addMediaButtons = document.querySelectorAll('.btn-add-media');
+            addMediaButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetField = this.getAttribute('data-target');
+                    // Ouvrir le modal de sélection de média
+                    // (à implémenter selon vos besoins)
+                    console.log('Ajouter média pour le champ:', targetField);
+                });
+            });
+            
+            // Validation du formulaire
+            const form = document.querySelector('.needs-validation');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            }
+        });
+    </script>
+{% endblock %}

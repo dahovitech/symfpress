@@ -1,0 +1,296 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}{{ media.originalName }} - Détail Média{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <!-- Navigation -->
+    <div class="mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('admin_media_index') }}">Bibliothèque média</a></li>
+                <li class="breadcrumb-item active">{{ media.originalName }}</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-1">{{ media.originalName }}</h1>
+            <p class="text-muted mb-0">
+                📅 Uploadé le {{ media.createdAt|date('d/m/Y à H:i') }} par {{ media.uploadedBy.displayName }}
+            </p>
+        </div>
+        
+        <div class="btn-group">
+            <a href="{{ path('admin_media_edit', {id: media.id}) }}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Modifier
+            </a>
+            <button type="button" class="btn btn-outline-danger" 
+                    onclick="deleteMedia({{ media.id }}, '{{ media.originalName|e('js') }}')">
+                <i class="fas fa-trash me-2"></i>Supprimer
+            </button>
+            <a href="{{ path('admin_media_index') }}" class="btn btn-outline-secondary">
+                ← Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Aperçu du média -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">👁️ Aperçu</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if media.isImage %}
+                        <div class="mb-3">
+                            <img src="{{ media.url }}" 
+                                 alt="{{ media.alt ?? media.originalName }}" 
+                                 class="img-fluid rounded shadow"
+                                 style="max-height: 500px; cursor: pointer;"
+                                 onclick="openFullscreen(this)">
+                        </div>
+                        <p class="text-muted">
+                            <i class="fas fa-expand-arrows-alt"></i> 
+                            {{ media.width }} x {{ media.height }} pixels
+                        </p>
+                    {% elseif media.isPdf %}
+                        <div class="mb-3">
+                            <iframe src="{{ media.url }}#toolbar=0" 
+                                    width="100%" 
+                                    height="600" 
+                                    class="border rounded">
+                                Votre navigateur ne supporte pas l'affichage PDF.
+                            </iframe>
+                        </div>
+                    {% elseif media.isVideo %}
+                        <div class="mb-3">
+                            <video controls class="w-100 rounded" style="max-height: 400px;">
+                                <source src="{{ media.url }}" type="{{ media.mimeType }}">
+                                Votre navigateur ne supporte pas la lecture vidéo.
+                            </video>
+                        </div>
+                    {% elseif media.isAudio %}
+                        <div class="mb-3">
+                            <audio controls class="w-100">
+                                <source src="{{ media.url }}" type="{{ media.mimeType }}">
+                                Votre navigateur ne supporte pas la lecture audio.
+                            </audio>
+                        </div>
+                    {% else %}
+                        <div class="py-5">
+                            <i class="fas fa-file text-secondary mb-3" style="font-size: 5rem;"></i>
+                            <h4 class="text-muted">Aperçu non disponible</h4>
+                            <p class="text-muted">Ce type de fichier ne peut pas être affiché dans le navigateur.</p>
+                            <a href="{{ media.url }}" target="_blank" class="btn btn-primary">
+                                <i class="fas fa-download me-2"></i>Télécharger le fichier
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- URL et intégration -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">🔗 Intégration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>URL du fichier</strong></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ app.request.schemeAndHttpHost }}{{ media.url }}" readonly id="media-url">
+                            <button class="btn btn-outline-secondary" onclick="copyToClipboard('media-url')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if media.isImage %}
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Code HTML (image)</strong></label>
+                        <div class="input-group">
+                            <textarea class="form-control" rows="2" readonly id="html-code"><img src="{{ app.request.schemeAndHttpHost }}{{ media.url }}" alt="{{ media.alt ?? media.originalName }}" width="{{ media.width }}" height="{{ media.height }}"></textarea>
+                            <button class="btn btn-outline-secondary" onclick="copyToClipboard('html-code')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Code Markdown</strong></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="![{{ media.alt ?? media.originalName }}]({{ app.request.schemeAndHttpHost }}{{ media.url }})" readonly id="markdown-code">
+                            <button class="btn btn-outline-secondary" onclick="copyToClipboard('markdown-code')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informations et métadonnées -->
+        <div class="col-lg-4">
+            <!-- Informations techniques -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 Informations techniques</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-5">Nom du fichier :</dt>
+                        <dd class="col-sm-7"><code>{{ media.filename }}</code></dd>
+                        
+                        <dt class="col-sm-5">Type MIME :</dt>
+                        <dd class="col-sm-7"><span class="badge bg-info">{{ media.mimeType }}</span></dd>
+                        
+                        <dt class="col-sm-5">Taille :</dt>
+                        <dd class="col-sm-7">{{ media.formattedFileSize }}</dd>
+                        
+                        {% if media.width and media.height %}
+                        <dt class="col-sm-5">Dimensions :</dt>
+                        <dd class="col-sm-7">{{ media.width }} x {{ media.height }} px</dd>
+                        {% endif %}
+                        
+                        <dt class="col-sm-5">Extension :</dt>
+                        <dd class="col-sm-7"><span class="badge bg-secondary">{{ media.extension|upper }}</span></dd>
+                        
+                        <dt class="col-sm-5">Chemin :</dt>
+                        <dd class="col-sm-7"><small class="text-muted">{{ media.path }}</small></dd>
+                        
+                        {% if media.updatedAt %}
+                        <dt class="col-sm-5">Modifié :</dt>
+                        <dd class="col-sm-7">{{ media.updatedAt|date('d/m/Y H:i') }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            
+            <!-- Métadonnées -->
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">🏷️ Métadonnées</h5>
+                    <a href="{{ path('admin_media_edit', {id: media.id}) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Texte alternatif</strong></label>
+                        {% if media.alt %}
+                            <p class="form-control-plaintext">{{ media.alt }}</p>
+                        {% else %}
+                            <p class="text-muted fst-italic">Aucun texte alternatif défini</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Légende</strong></label>
+                        {% if media.caption %}
+                            <p class="form-control-plaintext">{{ media.caption }}</p>
+                        {% else %}
+                            <p class="text-muted fst-italic">Aucune légende définie</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-0">
+                        <label class="form-label"><strong>Description</strong></label>
+                        {% if media.description %}
+                            <p class="form-control-plaintext">{{ media.description|nl2br }}</p>
+                        {% else %}
+                            <p class="text-muted fst-italic">Aucune description définie</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Miniatures (pour images) -->
+            {% if media.isImage %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">🖼️ Miniatures</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <p class="small mb-1"><strong>150x150</strong></p>
+                            <img src="{{ path('admin_media_thumbnail', {id: media.id, w: 150, h: 150}) }}" 
+                                 class="img-fluid rounded border" 
+                                 alt="Miniature 150x150">
+                        </div>
+                        <div class="col-6">
+                            <p class="small mb-1"><strong>300x300</strong></p>
+                            <img src="{{ path('admin_media_thumbnail', {id: media.id, w: 300, h: 300}) }}" 
+                                 class="img-fluid rounded border" 
+                                 alt="Miniature 300x300">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal plein écran pour images -->
+<div class="modal fade" id="fullscreenModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">{{ media.originalName }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body d-flex align-items-center justify-content-center p-0">
+                <img src="{{ media.url }}" class="img-fluid" alt="{{ media.alt ?? media.originalName }}">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    
+    // Feedback visuel
+    const btn = element.nextElementSibling;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check text-success"></i>';
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+    }, 1000);
+}
+
+function openFullscreen(img) {
+    {% if media.isImage %}
+    const modal = new bootstrap.Modal(document.getElementById('fullscreenModal'));
+    modal.show();
+    {% endif %}
+}
+
+function deleteMedia(mediaId, mediaName) {
+    if (confirm(`Supprimer définitivement "${mediaName}" ?\n\nCette action est irréversible.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/media/${mediaId}/delete`;
+        
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = '_token';
+        token.value = '{{ csrf_token("delete_media_" ~ media.id) }}';
+        
+        form.appendChild(token);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ isEdit ? 'Modifier le tag' : 'Nouveau tag' }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_tags_index') }}">Tags</a></li>
+        <li class="breadcrumb-item active">{{ isEdit ? 'Modifier' : 'Nouveau' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<form method="POST" id="tagForm">
+    <div class="row">
+        <!-- Contenu principal -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Informations du tag</h5>
+                </div>
+                <div class="card-body">
+                    {% set translation = tag.getTranslationForLanguage(currentLanguage) %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nom *</label>
+                        <input type="text" class="form-control" id="name" name="name" required 
+                               value="{{ translation ? translation.name : '' }}">
+                        <div class="form-text">Le nom du tag tel qu'il apparaîtra sur le site</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text" class="form-control" id="slug" name="slug" 
+                               value="{{ tag.slug }}">
+                        <div class="form-text">Laissez vide pour générer automatiquement. Utilisé dans les URLs.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4">{{ translation ? translation.description : '' }}</textarea>
+                        <div class="form-text">Description optionnelle du tag</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SEO -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">SEO</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="meta_title" class="form-label">Titre SEO</label>
+                        <input type="text" class="form-control" id="meta_title" name="meta_title" 
+                               value="{{ translation ? translation.metaTitle : '' }}">
+                        <div class="form-text">Titre affiché dans les résultats de recherche</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="meta_description" class="form-label">Description SEO</label>
+                        <textarea class="form-control" id="meta_description" name="meta_description" rows="3">{{ translation ? translation.metaDescription : '' }}</textarea>
+                        <div class="form-text">Description affichée dans les résultats de recherche</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {{ isEdit ? 'Mettre à jour' : 'Créer' }}
+                        </button>
+                        <a href="{{ path('admin_tags_index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Annuler
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Apparence -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Apparence</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="color" class="form-label">Couleur du tag</label>
+                        <div class="row">
+                            <div class="col-8">
+                                <input type="color" class="form-control form-control-color" id="color" name="color" 
+                                       value="{{ tag.color|default('#6c757d') }}">
+                            </div>
+                            <div class="col-4">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetColor()">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-text">Couleur d'affichage du tag sur le site</div>
+                    </div>
+                    
+                    <!-- Aperçu -->
+                    <div class="mb-3">
+                        <label class="form-label">Aperçu</label>
+                        <div id="tag-preview" class="p-2 border rounded">
+                            <span class="badge" id="preview-badge" style="background-color: {{ tag.color|default('#6c757d') }}; color: white;">
+                                {{ translation ? translation.name : 'Nom du tag' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Langues -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Langues</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Langue actuelle</label>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-globe me-2"></i>
+                            <strong>{{ currentLanguage.name }}</strong>
+                        </div>
+                    </div>
+                    
+                    {% if availableLanguages|length > 1 %}
+                    <div class="mb-3">
+                        <label class="form-label">Autres langues</label>
+                        {% for language in availableLanguages %}
+                            {% if language != currentLanguage %}
+                                <div class="mb-1">
+                                    {% if isEdit %}
+                                        <a href="{{ path('admin_tags_edit', {'id': tag.id, 'language': language.code}) }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            {{ language.name }}
+                                            {% set langTranslation = tag.getTranslationForLanguage(language) %}
+                                            {% if langTranslation %}
+                                                <i class="fas fa-check text-success ms-1"></i>
+                                            {% else %}
+                                                <i class="fas fa-plus text-warning ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    {% else %}
+                                        <span class="btn btn-sm btn-outline-secondary disabled">{{ language.name }}</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Statistiques (si édition) -->
+            {% if isEdit %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Statistiques</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Articles utilisés :</strong> {{ tag.postCount }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Créé le :</strong> {{ tag.createdAt|date('d/m/Y H:i') }}
+                    </div>
+                    {% if tag.updatedAt %}
+                    <div class="mb-0">
+                        <strong>Modifié le :</strong> {{ tag.updatedAt|date('d/m/Y H:i') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // Génération automatique du slug
+        const nameInput = document.getElementById('name');
+        const slugInput = document.getElementById('slug');
+        const colorInput = document.getElementById('color');
+        const previewBadge = document.getElementById('preview-badge');
+        
+        nameInput.addEventListener('input', function() {
+            // Mettre à jour l'aperçu
+            previewBadge.textContent = this.value || 'Nom du tag';
+            
+            // Générer le slug automatiquement
+            if (!slugInput.value || slugInput.dataset.auto !== 'false') {
+                let slug = this.value
+                    .toLowerCase()
+                    .replace(/[àáâãäå]/g, 'a')
+                    .replace(/[èéêë]/g, 'e')
+                    .replace(/[ìíîï]/g, 'i')
+                    .replace(/[òóôõö]/g, 'o')
+                    .replace(/[ùúûü]/g, 'u')
+                    .replace(/[ç]/g, 'c')
+                    .replace(/[ñ]/g, 'n')
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                
+                slugInput.value = slug;
+            }
+        });
+        
+        slugInput.addEventListener('input', function() {
+            this.dataset.auto = 'false';
+        });
+        
+        // Mise à jour de l'aperçu de couleur
+        colorInput.addEventListener('input', function() {
+            previewBadge.style.backgroundColor = this.value;
+        });
+        
+        // Fonction pour reset la couleur
+        function resetColor() {
+            colorInput.value = '#6c757d';
+            previewBadge.style.backgroundColor = '#6c757d';
+        }
+        
+        // Initialiser l'aperçu
+        if (nameInput.value) {
+            previewBadge.textContent = nameInput.value;
+        }
+    </script>
+{% endblock %}

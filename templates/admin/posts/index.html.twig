@@ -1,0 +1,148 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Articles{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active">Articles</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Articles</h2>
+    <a href="{{ path('admin_posts_new') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouvel article
+    </a>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Tous les statuts</option>
+                    <option value="published" {{ currentStatus == 'published' ? 'selected' : '' }}>Publié</option>
+                    <option value="draft" {{ currentStatus == 'draft' ? 'selected' : '' }}>Brouillon</option>
+                    <option value="scheduled" {{ currentStatus == 'scheduled' ? 'selected' : '' }}>Programmé</option>
+                    <option value="private" {{ currentStatus == 'private' ? 'selected' : '' }}>Privé</option>
+                    <option value="trash" {{ currentStatus == 'trash' ? 'selected' : '' }}>Corbeille</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Rechercher..." value="{{ currentSearch }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-outline-primary">Filtrer</button>
+                <a href="{{ path('admin_posts_index') }}" class="btn btn-outline-secondary">Réinitialiser</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des articles -->
+<div class="card">
+    <div class="card-body">
+        {% if posts is empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-edit fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun article trouvé</h5>
+                <p class="text-muted">Commencez par créer votre premier article.</p>
+                <a href="{{ path('admin_posts_new') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Créer un article
+                </a>
+            </div>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Auteur</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th>Vues</th>
+                            <th width="200">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in posts %}
+                            {% set translation = post.getTranslationForLanguage(currentLanguage) %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if post.featuredImage %}
+                                            <img src="{{ post.featuredImage.url }}" alt="" class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                        {% endif %}
+                                        <div>
+                                            <a href="{{ path('admin_posts_edit', {'id': post.id}) }}" class="text-decoration-none fw-bold">
+                                                {{ translation ? translation.title : 'Article #' ~ post.id }}
+                                            </a>
+                                            {% if post.isFeatured %}
+                                                <span class="badge bg-warning ms-2">Vedette</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ post.author.displayName }}</td>
+                                <td>
+                                    <span class="badge status-badge 
+                                        {% if post.status == 'published' %}bg-success
+                                        {% elseif post.status == 'draft' %}bg-secondary
+                                        {% elseif post.status == 'scheduled' %}bg-info
+                                        {% elseif post.status == 'private' %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ post.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div>{{ post.createdAt|date('d/m/Y') }}</div>
+                                    {% if post.publishedAt %}
+                                        <small class="text-muted">Publié le {{ post.publishedAt|date('d/m/Y') }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ post.viewCount }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ path('admin_posts_edit', {'id': post.id}) }}" class="btn btn-sm btn-outline-primary" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        {% if post.status == 'published' %}
+                                            <a href="{{ path('frontend_post_show', {'slug': post.slug}) }}" class="btn btn-sm btn-outline-info" title="Voir" target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        {% endif %}
+                                        
+                                        <form method="POST" action="{{ path('admin_posts_toggle_status', {'id': post.id}) }}" class="d-inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ post.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-{{ post.status == 'published' ? 'warning' : 'success' }}" 
+                                                    title="{{ post.status == 'published' ? 'Dépublier' : 'Publier' }}">
+                                                <i class="fas fa-{{ post.status == 'published' ? 'pause' : 'play' }}"></i>
+                                            </button>
+                                        </form>
+                                        
+                                        {% if is_granted('ROLE_EDITOR') %}
+                                        <form method="POST" action="{{ path('admin_posts_delete', {'id': post.id}) }}" class="d-inline" 
+                                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet article ?')">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ post.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

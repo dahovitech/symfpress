@@ -1,0 +1,231 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ isEdit ? 'Modifier l\'article' : 'Nouvel article' }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_posts_index') }}">Articles</a></li>
+        <li class="breadcrumb-item active">{{ isEdit ? 'Modifier' : 'Nouvel article' }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-md-8">
+        <form method="POST" class="needs-validation" novalidate>
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ isEdit ? 'Modifier l\'article' : 'Nouvel article' }}</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-language me-1"></i> {{ currentLanguage.name }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% for language in availableLanguages %}
+                                <li>
+                                    <a class="dropdown-item {{ language == currentLanguage ? 'active' : '' }}" 
+                                       href="{{ isEdit ? path('admin_posts_edit', {'id': post.id, 'language': language.code}) : path('admin_posts_new', {'language': language.code}) }}">
+                                        {{ language.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% set translation = post.getTranslationForLanguage(currentLanguage) %}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Titre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{{ translation ? translation.title : '' }}" required>
+                        <div class="invalid-feedback">Veuillez saisir un titre d'article.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text" class="form-control" id="slug" name="slug" 
+                               value="{{ post.slug ?? '' }}" 
+                               {{ isEdit ? 'readonly' : '' }}>
+                        <div class="form-text">Le slug sera généré automatiquement si laissé vide.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="excerpt" class="form-label">Extrait</label>
+                        <textarea class="form-control" id="excerpt" name="excerpt" rows="3">{{ translation ? translation.excerpt : '' }}</textarea>
+                        <div class="form-text">Résumé court de l'article (optionnel).</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Image en vedette -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-image me-1"></i> Image mise en avant</h6>
+                </div>
+                <div class="card-body">
+                    <div class="featured-image-selector">
+                        <input type="hidden" name="featured_image_id" value="{{ post.featuredImage ? post.featuredImage.id : '' }}">
+                        <div class="featured-image-preview" style="{{ post.featuredImage ? 'display: block;' : 'display: none;' }}">
+                            {# Le contenu sera généré par JavaScript #}
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-select-featured-image {{ post.featuredImage ? 'btn-outline-primary' : 'btn-primary' }}">
+                                {{ post.featuredImage ? 'Changer l\'image mise en avant' : 'Sélectionner une image mise en avant' }}
+                            </button>
+                            <button type="button" class="btn btn-outline-danger ms-2 btn-remove-featured-image" style="{{ post.featuredImage ? 'display: inline-block;' : 'display: none;' }}">
+                                <i class="fas fa-times"></i> Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenu avec bouton Ajouter un média -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-edit me-1"></i> Contenu de l'article</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label for="content" class="form-label mb-0">Contenu <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-outline-secondary btn-sm btn-add-media">
+                                <i class="fas fa-image"></i> Ajouter un média
+                            </button>
+                        </div>
+                        <textarea class="form-control" id="content" name="content" rows="15" required>{{ translation ? translation.content : '' }}</textarea>
+                        <div class="invalid-feedback">Veuillez saisir le contenu de l'article.</div>
+                        <div class="form-text">Utilisez le bouton "Ajouter un média" pour insérer des images ou fichiers dans votre contenu.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catégories et tags -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-tags me-1"></i> Catégorisation</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="categories" class="form-label">Catégories</label>
+                            <select class="form-select" id="categories" name="categories[]" multiple size="5">
+                                {% for category in categories %}
+                                    {% set categoryTranslation = category.getTranslationForLanguage(currentLanguage) %}
+                                    <option value="{{ category.id }}" 
+                                            {{ post and category in post.categories ? 'selected' : '' }}>
+                                        {% for i in 0..category.level %}
+                                            {% if i > 0 %}—{% endif %}
+                                        {% endfor %}
+                                        {{ categoryTranslation ? categoryTranslation.name : 'Catégorie #' ~ category.id }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Maintenez Ctrl pour sélectionner plusieurs catégories.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tags" class="form-label">Tags</label>
+                            <select class="form-select" id="tags" name="tags[]" multiple size="5">
+                                {% for tag in tags %}
+                                    {% set tagTranslation = tag.getTranslationForLanguage(currentLanguage) %}
+                                    <option value="{{ tag.id }}" 
+                                            {{ post and tag in post.tags ? 'selected' : '' }}>
+                                        {{ tagTranslation ? tagTranslation.name : 'Tag #' ~ tag.id }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Maintenez Ctrl pour sélectionner plusieurs tags.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SEO -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-search me-1"></i> Référencement SEO</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="meta_title" class="form-label">Titre SEO</label>
+                        <input type="text" class="form-control" id="meta_title" name="meta_title" 
+                               value="{{ translation ? translation.metaTitle : '' }}" maxlength="60">
+                        <div class="form-text">Titre affiché dans les résultats de recherche (60 caractères max)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="meta_description" class="form-label">Description SEO</label>
+                        <textarea class="form-control" id="meta_description" name="meta_description" rows="2" maxlength="160">{{ translation ? translation.metaDescription : '' }}</textarea>
+                        <div class="form-text">Description affichée dans les résultats de recherche (160 caractères max)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ path('admin_posts_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+                <div>
+                    <button type="submit" name="status" value="draft" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-save"></i> Sauvegarder brouillon
+                    </button>
+                    <button type="submit" name="status" value="published" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Publier
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Statut de publication -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> Statut</h6>
+            </div>
+            <div class="card-body">
+                {% if isEdit %}
+                <p class="mb-2"><strong>Statut actuel :</strong> 
+                    <span class="badge {{ post.status == 'published' ? 'bg-success' : 'bg-secondary' }}">
+                        {{ post.status == 'published' ? 'Publié' : 'Brouillon' }}
+                    </span>
+                </p>
+                <p class="mb-2"><strong>Auteur :</strong> {{ post.author.displayName }}</p>
+                <p class="mb-2"><strong>Créé le :</strong> {{ post.createdAt|date('d/m/Y H:i') }}</p>
+                {% if post.updatedAt %}
+                <p class="mb-0"><strong>Modifié le :</strong> {{ post.updatedAt|date('d/m/Y H:i') }}</p>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">Nouvel article - sera sauvegardé en tant que brouillon par défaut.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Aide -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-question-circle me-1"></i> Aide</h6>
+            </div>
+            <div class="card-body">
+                <h6>Image en vedette</h6>
+                <p class="small text-muted mb-3">L'image en vedette sera affichée en tête de l'article et dans les listes.</p>
+                
+                <h6>Catégorisation</h6>
+                <p class="small text-muted mb-3">Utilisez les catégories pour organiser vos articles et les tags pour les détailler.</p>
+                
+                <h6>SEO</h6>
+                <p class="small text-muted mb-0">Optimisez le titre et la description pour améliorer le référencement.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

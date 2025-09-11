@@ -1,0 +1,276 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ user.fullName }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('admin_users_index') }}">Utilisateurs</a></li>
+        <li class="breadcrumb-item active">{{ user.fullName }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 d-flex align-items-center">
+        <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center text-white me-3">
+            {{ user.firstName|slice(0,1)|upper }}{{ user.lastName|slice(0,1)|upper }}
+        </div>
+        {{ user.fullName }}
+    </h1>
+    <div>
+        {% if canEdit %}
+            <a href="{{ path('admin_users_edit', {'id': user.id}) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Modifier
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Informations personnelles -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Informations personnelles</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Nom complet :</dt>
+                    <dd class="col-sm-9">{{ user.fullName }}</dd>
+                    
+                    <dt class="col-sm-3">Nom d'utilisateur :</dt>
+                    <dd class="col-sm-9">@{{ user.username }}</dd>
+                    
+                    <dt class="col-sm-3">Email :</dt>
+                    <dd class="col-sm-9">
+                        <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+                    </dd>
+                    
+                    {% if user.website %}
+                    <dt class="col-sm-3">Site web :</dt>
+                    <dd class="col-sm-9">
+                        <a href="{{ user.website }}" target="_blank" rel="noopener">{{ user.website }}</a>
+                    </dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-3">Rôle :</dt>
+                    <dd class="col-sm-9">
+                        {% set highestRole = user.highestRole %}
+                        <span class="badge 
+                            {% if highestRole == 'ROLE_ADMIN' %}bg-danger
+                            {% elseif highestRole == 'ROLE_EDITOR' %}bg-warning
+                            {% elseif highestRole == 'ROLE_AUTHOR' %}bg-info
+                            {% elseif highestRole == 'ROLE_CONTRIBUTOR' %}bg-secondary
+                            {% else %}bg-light text-dark{% endif %}">
+                            {% if highestRole == 'ROLE_ADMIN' %}Administrateur
+                            {% elseif highestRole == 'ROLE_EDITOR' %}Éditeur
+                            {% elseif highestRole == 'ROLE_AUTHOR' %}Auteur
+                            {% elseif highestRole == 'ROLE_CONTRIBUTOR' %}Contributeur
+                            {% elseif highestRole == 'ROLE_SUBSCRIBER' %}Abonné
+                            {% else %}Utilisateur{% endif %}
+                        </span>
+                    </dd>
+                    
+                    <dt class="col-sm-3">Statut :</dt>
+                    <dd class="col-sm-9">
+                        {% if user.isActive %}
+                            <span class="badge bg-success">Actif</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactif</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+                
+                {% if user.bio %}
+                <hr>
+                <h6>Biographie</h6>
+                <p class="text-muted">{{ user.bio|nl2br }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Activité récente -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Activité récente</h5>
+            </div>
+            <div class="card-body">
+                <!-- Articles récents -->
+                {% if user.posts|length > 0 %}
+                <h6 class="mb-3">Articles récents</h6>
+                <div class="list-group list-group-flush mb-4">
+                    {% for post in user.posts|slice(0, 5) %}
+                        {% set translation = post.translations|first %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ translation ? translation.title : 'Article #' ~ post.id }}</h6>
+                                <small class="text-muted">{{ post.createdAt|date('d/m/Y H:i') }}</small>
+                                <span class="badge {{ post.status == 'published' ? 'bg-success' : 'bg-secondary' }} ms-2">
+                                    {{ post.status == 'published' ? 'Publié' : 'Brouillon' }}
+                                </span>
+                            </div>
+                            <a href="{{ path('admin_posts_edit', {'id': post.id}) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Pages récentes -->
+                {% if user.pages|length > 0 %}
+                <h6 class="mb-3">Pages récentes</h6>
+                <div class="list-group list-group-flush mb-4">
+                    {% for page in user.pages|slice(0, 5) %}
+                        {% set translation = page.translations|first %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ translation ? translation.title : 'Page #' ~ page.id }}</h6>
+                                <small class="text-muted">{{ page.createdAt|date('d/m/Y H:i') }}</small>
+                                <span class="badge {{ page.status == 'published' ? 'bg-success' : 'bg-secondary' }} ms-2">
+                                    {{ page.status == 'published' ? 'Publiée' : 'Brouillon' }}
+                                </span>
+                            </div>
+                            <a href="{{ path('admin_pages_edit', {'id': page.id}) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if user.posts|length == 0 and user.pages|length == 0 %}
+                <div class="text-center py-4">
+                    <i class="fas fa-file fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">Aucun contenu créé pour le moment.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Avatar -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-user-circle me-1"></i> Avatar</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="avatar-xl bg-primary rounded-circle d-inline-flex align-items-center justify-content-center text-white mb-3">
+                    {{ user.firstName|slice(0,1)|upper }}{{ user.lastName|slice(0,1)|upper }}
+                </div>
+                <h5>{{ user.fullName }}</h5>
+                <p class="text-muted">@{{ user.username }}</p>
+            </div>
+        </div>
+        
+        <!-- Statistiques -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-1"></i> Statistiques</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ user.posts|length }}</h4>
+                        <small class="text-muted">Articles</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-secondary">{{ user.pages|length }}</h4>
+                        <small class="text-muted">Pages</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-info">{{ user.comments|length }}</h4>
+                        <small class="text-muted">Commentaires</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning">{{ user.medias|length }}</h4>
+                        <small class="text-muted">Médias</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informations compte -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> Informations compte</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Inscrit le :</strong><br>
+                    <small class="text-muted">{{ user.createdAt|date('d/m/Y \u00e0 H:i') }}</small>
+                </p>
+                
+                {% if user.lastLoginAt %}
+                <p class="mb-2">
+                    <strong>Dernière connexion :</strong><br>
+                    <small class="text-muted">{{ user.lastLoginAt|date('d/m/Y \u00e0 H:i') }}</small>
+                </p>
+                {% else %}
+                <p class="mb-2">
+                    <strong>Dernière connexion :</strong><br>
+                    <small class="text-muted">Jamais connecté</small>
+                </p>
+                {% endif %}
+                
+                {% if user.updatedAt %}
+                <p class="mb-0">
+                    <strong>Dernière modification :</strong><br>
+                    <small class="text-muted">{{ user.updatedAt|date('d/m/Y \u00e0 H:i') }}</small>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        {% if canEdit %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-tools me-1"></i> Actions</h6>
+            </div>
+            <div class="card-body">
+                <a href="{{ path('admin_users_edit', {'id': user.id}) }}" class="btn btn-primary btn-sm d-block mb-2">
+                    <i class="fas fa-edit"></i> Modifier l'utilisateur
+                </a>
+                
+                {% if user != app.user %}
+                <form method="post" action="{{ path('admin_users_toggle_status', {'id': user.id}) }}" class="d-inline w-100 mb-2">
+                    <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
+                    <button type="submit" class="btn btn-outline-{{ user.isActive ? 'warning' : 'success' }} btn-sm d-block">
+                        <i class="fas fa-{{ user.isActive ? 'pause' : 'play' }}"></i> 
+                        {{ user.isActive ? 'Désactiver' : 'Activer' }} le compte
+                    </button>
+                </form>
+                {% endif %}
+                
+                {% if user.email %}
+                <a href="mailto:{{ user.email }}" class="btn btn-outline-secondary btn-sm d-block">
+                    <i class="fas fa-envelope"></i> Envoyer un email
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+}
+.avatar-xl {
+    width: 100px;
+    height: 100px;
+    font-size: 32px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Plugins{% endblock %}
+
+{% block admin_content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="fas fa-puzzle-piece me-2"></i>
+        Gestion des Plugins
+    </h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadPluginModal">
+        <i class="fas fa-upload me-2"></i>
+        Installer un Plugin
+    </button>
+</div>
+
+<!-- Statistiques des plugins -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Plugins Chargés
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ loadedPlugins|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-download fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Plugins Actifs
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ activePlugins|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des plugins -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Plugins Disponibles</h6>
+    </div>
+    <div class="card-body">
+        {% if loadedPlugins|length > 0 %}
+            <div class="row">
+                {% for pluginName, plugin in loadedPlugins %}
+                    {% set metadata = pluginMetadata[pluginName] ?? {} %}
+                    {% set isActive = pluginName in activePlugins|keys %}
+                    
+                    <div class="col-lg-6 col-xl-4 mb-4">
+                        <div class="card h-100 {{ isActive ? 'border-success' : 'border-secondary' }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title">{{ metadata.name ?? pluginName|title }}</h5>
+                                    {% if isActive %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactif</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <p class="card-text text-muted small">
+                                    {{ metadata.description ?? 'Aucune description disponible' }}
+                                </p>
+                                
+                                {% if metadata.version is defined %}
+                                    <p class="card-text">
+                                        <small class="text-muted">Version: {{ metadata.version }}</small>
+                                    </p>
+                                {% endif %}
+                                
+                                {% if metadata.author is defined %}
+                                    <p class="card-text">
+                                        <small class="text-muted">Auteur: {{ metadata.author }}</small>
+                                    </p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="card-footer bg-transparent">
+                                <div class="btn-group w-100" role="group">
+                                    {% if isActive %}
+                                        <a href="{{ path('admin_plugins_deactivate', {'pluginName': pluginName}) }}" 
+                                           class="btn btn-warning btn-sm"
+                                           onclick="return confirm('Êtes-vous sûr de vouloir désactiver ce plugin ?')">
+                                            <i class="fas fa-pause me-1"></i>
+                                            Désactiver
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ path('admin_plugins_activate', {'pluginName': pluginName}) }}" 
+                                           class="btn btn-success btn-sm">
+                                            <i class="fas fa-play me-1"></i>
+                                            Activer
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <a href="{{ path('admin_plugins_uninstall', {'pluginName': pluginName}) }}" 
+                                       class="btn btn-danger btn-sm"
+                                       onclick="return confirm('Êtes-vous sûr de vouloir désinstaller ce plugin ? Cette action est irréversible.')">
+                                        <i class="fas fa-trash me-1"></i>
+                                        Désinstaller
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-puzzle-piece fa-3x text-gray-300 mb-3"></i>
+                <h5 class="text-gray-600">Aucun plugin installé</h5>
+                <p class="text-gray-500">Commencez par installer votre premier plugin.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal d'upload de plugin -->
+<div class="modal fade" id="uploadPluginModal" tabindex="-1" aria-labelledby="uploadPluginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadPluginModalLabel">
+                    <i class="fas fa-upload me-2"></i>
+                    Installer un Plugin
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="{{ path('admin_plugins_upload') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="plugin_file" class="form-label">Fichier Plugin (.zip)</label>
+                        <input type="file" class="form-control" id="plugin_file" name="plugin_file" accept=".zip" required>
+                        <div class="form-text">
+                            Sélectionnez un fichier ZIP contenant le plugin à installer.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Instructions :</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Le fichier doit être un archive ZIP</li>
+                            <li>Le plugin doit contenir un fichier plugin.yaml</li>
+                            <li>La classe principale doit implémenter PluginInterface</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>
+                        Installer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

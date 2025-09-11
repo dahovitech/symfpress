@@ -1,0 +1,135 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Catégories{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active">Catégories</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Catégories</h1>
+    <div>
+        <a href="{{ path('admin_categories_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nouvelle catégorie
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ categories|length }} catégorie(s)</h5>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-language me-1"></i> {{ currentLanguage.name }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                {% for language in availableLanguages %}
+                    <li>
+                        <a class="dropdown-item {{ language == currentLanguage ? 'active' : '' }}" 
+                           href="{{ path('admin_categories_index', {'language': language.code}) }}">
+                            {{ language.name }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if categories is empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucune catégorie</h5>
+                <p class="text-muted mb-4">Commencez par créer votre première catégorie pour organiser vos articles.</p>
+                <a href="{{ path('admin_categories_new') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Créer une catégorie
+                </a>
+            </div>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Slug</th>
+                            <th>Articles</th>
+                            <th>Parent</th>
+                            <th>Ordre</th>
+                            <th>Créée le</th>
+                            <th width="150">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                            {% set translation = category.getTranslationForLanguage(currentLanguage) %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if category.icon %}
+                                            <i class="{{ category.icon }} me-2" 
+                                               {% if category.color %}style="color: {{ category.color }}"{% endif %}></i>
+                                        {% endif %}
+                                        {% for i in 0..category.level %}
+                                            {% if i > 0 %}&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}
+                                        {% endfor %}
+                                        <div>
+                                            <strong>{{ translation ? translation.name : 'Catégorie #' ~ category.id }}</strong>
+                                            {% if translation and translation.description %}
+                                                <br><small class="text-muted">{{ translation.description|slice(0, 80) }}{% if translation.description|length > 80 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <code>{{ category.slug }}</code>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ category.postCount }}</span>
+                                </td>
+                                <td>
+                                    {% if category.parent %}
+                                        {% set parentTranslation = category.parent.getTranslationForLanguage(currentLanguage) %}
+                                        {{ parentTranslation ? parentTranslation.name : 'Catégorie #' ~ category.parent.id }}
+                                    {% else %}
+                                        <span class="text-muted">Racine</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ category.menuOrder }}</td>
+                                <td>
+                                    <small class="text-muted">{{ category.createdAt|date('d/m/Y H:i') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ path('admin_categories_show', {'id': category.id}) }}" 
+                                           class="btn btn-outline-primary" title="Voir">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ path('admin_categories_edit', {'id': category.id}) }}" 
+                                           class="btn btn-outline-secondary" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if category.postCount == 0 %}
+                                            <form method="post" action="{{ path('admin_categories_delete', {'id': category.id}) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Voulez-vous vraiment supprimer cette catégorie ?')">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ category.id) }}">
+                                                <button type="submit" class="btn btn-outline-danger" title="Supprimer">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

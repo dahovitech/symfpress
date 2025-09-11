@@ -1,0 +1,248 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Modifier {{ media.originalName }} - Média{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <!-- Navigation -->
+    <div class="mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('admin_media_index') }}">Bibliothèque média</a></li>
+                <li class="breadcrumb-item"><a href="{{ path('admin_media_show', {id: media.id}) }}">{{ media.originalName }}</a></li>
+                <li class="breadcrumb-item active">Édition</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">✍️ Modifier "{{ media.originalName }}"</h1>
+        <div class="btn-group">
+            <a href="{{ path('admin_media_show', {id: media.id}) }}" class="btn btn-outline-secondary">
+                ← Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulaire d'édition -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">🏷️ Métadonnées du fichier</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label for="alt" class="form-label">
+                                <strong>Texte alternatif</strong>
+                                {% if media.isImage %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="alt" 
+                                   name="alt" 
+                                   value="{{ media.alt }}" 
+                                   placeholder="Description courte pour l'accessibilité"
+                                   {% if media.isImage %}required{% endif %}>
+                            <div class="form-text">
+                                {% if media.isImage %}
+                                    <i class="fas fa-info-circle text-primary"></i>
+                                    <strong>Obligatoire pour les images</strong> : Décrivez brièvement ce que représente l'image pour les lecteurs d'écran.
+                                {% else %}
+                                    Texte descriptif pour l'accessibilité (optionnel pour les documents).
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="caption" class="form-label"><strong>Légende</strong></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="caption" 
+                                   name="caption" 
+                                   value="{{ media.caption }}" 
+                                   placeholder="Légende affichée sous le média">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle text-info"></i>
+                                Légende qui sera affichée publiquement sous le média (optionnel).
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="description" class="form-label"><strong>Description</strong></label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="4" 
+                                      placeholder="Description détaillée du contenu du fichier">{{ media.description }}</textarea>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle text-secondary"></i>
+                                Description complète pour usage interne et référencement.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                            </button>
+                            <a href="{{ path('admin_media_show', {id: media.id}) }}" class="btn btn-outline-secondary">
+                                Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Guide des bonnes pratiques -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">💡 Guide des bonnes pratiques</h5>
+                </div>
+                <div class="card-body">
+                    {% if media.isImage %}
+                    <h6 class="text-primary">Pour les images :</h6>
+                    <ul class="mb-3">
+                        <li><strong>Texte alternatif</strong> : Décrivez l'image en une phrase courte (ex: "Chat noir assis sur un canapé rouge")</li>
+                        <li><strong>Légende</strong> : Ajoutez un contexte si nécessaire (ex: "Photo prise lors de l'événement XYZ")</li>
+                        <li><strong>Mots-clés SEO</strong> : Incluez des termes pertinents dans la description</li>
+                    </ul>
+                    {% else %}
+                    <h6 class="text-info">Pour les documents :</h6>
+                    <ul class="mb-3">
+                        <li><strong>Description</strong> : Indiquez le contenu et l'usage du document</li>
+                        <li><strong>Mots-clés</strong> : Facilitez la recherche en ajoutant des termes pertinents</li>
+                        <li><strong>Version</strong> : Mentionnez la version ou la date si applicable</li>
+                    </ul>
+                    {% endif %}
+                    
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Astuce :</strong> Des métadonnées bien renseignées améliorent l'accessibilité, le référencement et facilitent la gestion de votre bibliothèque média.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aperçu et informations -->
+        <div class="col-lg-4">
+            <!-- Aperçu -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">👁️ Aperçu</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if media.isImage %}
+                        <img src="{{ media.url }}" 
+                             class="img-fluid rounded" 
+                             alt="{{ media.alt ?? media.originalName }}"
+                             style="max-height: 200px;">
+                    {% elseif media.isPdf %}
+                        <i class="fas fa-file-pdf text-danger mb-2" style="font-size: 3rem;"></i>
+                        <p class="mb-0">Document PDF</p>
+                    {% elseif media.isVideo %}
+                        <i class="fas fa-file-video text-primary mb-2" style="font-size: 3rem;"></i>
+                        <p class="mb-0">Fichier vidéo</p>
+                    {% elseif media.isAudio %}
+                        <i class="fas fa-file-audio text-success mb-2" style="font-size: 3rem;"></i>
+                        <p class="mb-0">Fichier audio</p>
+                    {% else %}
+                        <i class="fas fa-file text-secondary mb-2" style="font-size: 3rem;"></i>
+                        <p class="mb-0">Document</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Informations techniques -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 Informations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row small">
+                        <dt class="col-6">Nom original :</dt>
+                        <dd class="col-6">{{ media.originalName }}</dd>
+                        
+                        <dt class="col-6">Type :</dt>
+                        <dd class="col-6"><span class="badge bg-info">{{ media.mimeType }}</span></dd>
+                        
+                        <dt class="col-6">Taille :</dt>
+                        <dd class="col-6">{{ media.formattedFileSize }}</dd>
+                        
+                        {% if media.width and media.height %}
+                        <dt class="col-6">Dimensions :</dt>
+                        <dd class="col-6">{{ media.width }} x {{ media.height }}</dd>
+                        {% endif %}
+                        
+                        <dt class="col-6">Uploadé :</dt>
+                        <dd class="col-6">{{ media.createdAt|date('d/m/Y') }}</dd>
+                        
+                        <dt class="col-6">Par :</dt>
+                        <dd class="col-6">{{ media.uploadedBy.displayName }}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <!-- Actions rapides -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">⚡ Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ media.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-external-link-alt me-2"></i>Ouvrir le fichier
+                        </a>
+                        <a href="{{ media.url }}" download class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-download me-2"></i>Télécharger
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                onclick="deleteMedia({{ media.id }}, '{{ media.originalName|e('js') }}')">
+                            <i class="fas fa-trash me-2"></i>Supprimer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+function deleteMedia(mediaId, mediaName) {
+    if (confirm(`Supprimer définitivement "${mediaName}" ?\n\nCette action est irréversible.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/media/${mediaId}/delete`;
+        
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = '_token';
+        token.value = '{{ csrf_token("delete_media_" ~ media.id) }}';
+        
+        form.appendChild(token);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Auto-génération du texte alt à partir du nom de fichier si vide
+document.addEventListener('DOMContentLoaded', function() {
+    const altInput = document.getElementById('alt');
+    
+    if (!altInput.value.trim()) {
+        // Suggerer un texte alt basé sur le nom du fichier
+        const originalName = '{{ media.originalName }}';
+        const suggestion = originalName
+            .replace(/\.[^/.]+$/, '') // Enlever l'extension
+            .replace(/[_-]/g, ' ') // Remplacer underscores et tirets par espaces
+            .replace(/([a-z])([A-Z])/g, '$1 $2') // Séparer camelCase
+            .toLowerCase()
+            .replace(/\b\w/g, l => l.toUpperCase()); // Capitaliser
+        
+        altInput.placeholder = `Suggestion : "${suggestion}"`;
+    }
+});
+</script>
+{% endblock %}
