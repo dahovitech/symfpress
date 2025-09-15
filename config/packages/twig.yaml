@@ -1,5 +1,11 @@
 twig:
     file_name_pattern: '*.twig'
+    default_path: '%kernel.project_dir%/templates'
+    
+    # Configuration pour support des thèmes multiples
+    paths:
+        # Les chemins des thèmes seront ajoutés dynamiquement par le TemplateResolver
+        '%kernel.project_dir%/templates': ~
 
 when@test:
     twig:

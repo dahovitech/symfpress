@@ -1,0 +1,38 @@
+{# templates/widgets/menu_widget.html.twig #}
+{# Widget de menu #}
+
+{% extends 'widgets/base_widget.html.twig' %}
+
+{% block widget_content %}
+    {% if data.menu_items is defined and data.menu_items|length > 0 %}
+        <nav class="widget-menu">
+            <ul class="menu-list">
+                {% for item in data.menu_items %}
+                    <li class="menu-item">
+                        <a href="{{ item.url|default('#') }}" 
+                           class="menu-link"
+                           {% if item.target is defined %}target="{{ item.target }}"{% endif %}>
+                            {{ item.label }}
+                        </a>
+                        
+                        {% if item.children is defined and item.children|length > 0 %}
+                            <ul class="menu-submenu">
+                                {% for child in item.children %}
+                                    <li class="menu-subitem">
+                                        <a href="{{ child.url|default('#') }}" 
+                                           class="menu-sublink"
+                                           {% if child.target is defined %}target="{{ child.target }}"{% endif %}>
+                                            {{ child.label }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </nav>
+    {% else %}
+        <p class="widget-empty">Menu non configuré.</p>
+    {% endif %}
+{% endblock %}

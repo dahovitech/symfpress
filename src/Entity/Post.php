@@ -27,6 +27,10 @@ class Post
     #[ORM\Column(length: 255, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 3, max: 255)]
+    #[Assert\Regex(
+        pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+        message: 'Le slug doit contenir uniquement des lettres minuscules, chiffres et tirets, et ne peut commencer ou finir par un tiret.'
+    )]
     private ?string $slug = null;
 
     #[ORM\Column(length: 20)]

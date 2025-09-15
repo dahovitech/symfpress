@@ -30,22 +30,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank]
-    #[Assert\Email]
+    #[Assert\Email(
+        mode: 'strict',
+        message: 'L\'adresse email doit être valide.'
+    )]
+    #[Assert\Length(max: 180)]
     private ?string $email = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 2, max: 100)]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-ZÀ-ÿŒœ\s\-\']{2,100}$/u',
+        message: 'Le prénom ne peut contenir que des lettres, espaces, traits d\'union et apostrophes.'
+    )]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 2, max: 100)]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-ZÀ-ÿŒœ\s\-\']{2,100}$/u',
+        message: 'Le nom ne peut contenir que des lettres, espaces, traits d\'union et apostrophes.'
+    )]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 100, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 3, max: 100)]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-Z0-9_\-\.]{3,100}$/',
+        message: 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, tirets, underscores et points.'
+    )]
     private ?string $username = null;
 
     /**
@@ -73,9 +89,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeInterface $lastLoginAt = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(
+        max: 1000,
+        maxMessage: 'La biographie ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $bio = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Url(
+        message: 'L\'URL du site web doit être valide.'
+    )]
+    #[Assert\Length(max: 255)]
     private ?string $website = null;
 
     #[ORM\Column(length: 255, nullable: true)]

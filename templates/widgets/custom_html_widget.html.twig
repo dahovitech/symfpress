@@ -1,0 +1,14 @@
+{# templates/widgets/custom_html_widget.html.twig #}
+{# Widget HTML personnalisé #}
+
+{% extends 'widgets/base_widget.html.twig' %}
+
+{% block widget_content %}
+    {% if widget.content %}
+        <div class="widget-custom-html">
+            {{ widget.content|raw }}
+        </div>
+    {% else %}
+        <p class="widget-empty">Aucun contenu HTML défini.</p>
+    {% endif %}
+{% endblock %}

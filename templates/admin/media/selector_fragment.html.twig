@@ -1,0 +1,288 @@
+{# Fragment de sélection de médias spécialement conçu pour injection AJAX via innerHTML #}
+{# ❌ PAS d'extension de layout - Fragment pur #}
+
+<div class="container-fluid p-3">
+    <!-- Filtres rapides -->
+    <div class="mb-3">
+        <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="typeFilter" id="type-all" value="all" {{ type == 'all' ? 'checked' : '' }}>
+            <label class="btn btn-outline-primary btn-sm" for="type-all">Tous</label>
+            
+            <input type="radio" class="btn-check" name="typeFilter" id="type-images" value="images" {{ type == 'images' ? 'checked' : '' }}>
+            <label class="btn btn-outline-primary btn-sm" for="type-images">Images</label>
+            
+            <input type="radio" class="btn-check" name="typeFilter" id="type-documents" value="documents" {{ type == 'documents' ? 'checked' : '' }}>
+            <label class="btn btn-outline-primary btn-sm" for="type-documents">Documents</label>
+        </div>
+        
+        {% if multiple %}
+            <button type="button" class="btn btn-success btn-sm ms-2" id="confirm-selection" style="display: none;">
+                <i class="fas fa-check me-1"></i>Valider la sélection
+            </button>
+        {% endif %}
+    </div>
+
+    {% if medias is empty %}
+        <div class="text-center py-4">
+            <i class="fas fa-folder-open text-muted mb-3" style="font-size: 2.5rem;"></i>
+            <h6 class="text-muted">Aucun média disponible</h6>
+            <p class="text-muted mb-3">Commencez par uploader des fichiers depuis la <a href="{{ path('admin_media_index') }}" target="_blank">médiathèque</a>.</p>
+        </div>
+    {% else %}
+        <!-- Grille de sélection -->
+        <div class="row g-3" id="media-selector-grid">
+            {% for media in medias %}
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <div class="media-selector-item card h-100 {{ multiple ? 'selectable-multiple' : 'selectable-single' }}" 
+                     data-media-id="{{ media.id }}"
+                     data-media-url="{{ asset('uploads/' ~ media.filename) }}"
+                     data-media-name="{{ media.originalName }}"
+                     data-media-alt="{{ media.alt }}"
+                     data-media-width="{{ media.width }}"
+                     data-media-height="{{ media.height }}"
+                     data-media-type="{{ media.mimeType }}"
+                     data-media-is-image="{{ media.isImage ? 'true' : 'false' }}"
+                     data-media-file-size="{{ media.formattedFileSize }}"
+                     data-media-thumbnail-url="{{ media.thumbnailUrl ?? asset('uploads/' ~ media.filename) }}"
+                     style="cursor: pointer;">
+                    
+                    <div class="position-relative">
+                        {% if multiple %}
+                        <!-- Checkbox pour sélection multiple -->
+                        <div class="position-absolute top-0 start-0 p-2">
+                            <input class="form-check-input media-selector-checkbox" type="checkbox" 
+                                   value="{{ media.id }}">
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Indicateur de sélection -->
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <div class="selection-indicator" style="display: none;">
+                                <i class="fas fa-check-circle text-success bg-white rounded-circle"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Aperçu -->
+                        <div class="media-preview" style="height: 120px; overflow: hidden;">
+                            {% if media.isImage %}
+                                <img src="{{ asset('uploads/' ~ media.filename) }}" 
+                                     alt="{{ media.alt ?? media.originalName }}" 
+                                     class="w-100 h-100" 
+                                     style="object-fit: cover;"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGVlMmU2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzZjNzU3ZCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPic;">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                                    {% if media.mimeType starts with 'application/pdf' %}
+                                        <i class="fas fa-file-pdf text-danger" style="font-size: 2rem;"></i>
+                                    {% elseif media.mimeType starts with 'video/' %}
+                                        <i class="fas fa-file-video text-primary" style="font-size: 2rem;"></i>
+                                    {% elseif media.mimeType starts with 'audio/' %}
+                                        <i class="fas fa-file-audio text-success" style="font-size: 2rem;"></i>
+                                    {% else %}
+                                        <i class="fas fa-file text-secondary" style="font-size: 2rem;"></i>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Informations -->
+                    <div class="card-body p-2">
+                        <h6 class="card-title mb-1 small" title="{{ media.originalName }}">
+                            {{ media.originalName|length > 15 ? media.originalName|slice(0, 15) ~ '...' : media.originalName }}
+                        </h6>
+                        <small class="text-muted d-block">{{ media.formattedFileSize ?? (media.fileSize/1024)|round ~ ' KB' }}</small>
+                        {% if media.width and media.height %}
+                            <small class="text-muted d-block">{{ media.width }}×{{ media.height }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- CSS personnalisé pour le fragment -->
+<style>
+.media-selector-item {
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.media-selector-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    border-color: #0d6efd;
+}
+
+.media-selector-item.selected {
+    border-color: #0d6efd;
+    background-color: #f8f9ff;
+    transform: translateY(-2px);
+}
+
+.media-preview img {
+    transition: transform 0.2s ease;
+}
+
+.media-selector-item:hover .media-preview img {
+    transform: scale(1.05);
+}
+
+.selection-indicator {
+    font-size: 1.2rem;
+}
+
+#media-selector-grid .card {
+    border-radius: 8px;
+}
+
+#media-selector-grid .card-body {
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+}
+</style>
+
+<!-- JavaScript spécialement adapté pour innerHTML injection -->
+<script>
+console.log("Fragment: Initialisation du JavaScript de sélection");
+
+// ✅ Fonction auto-exécutable pour éviter les conflits de portée
+(function() {
+    const isMultiple = {{ multiple ? 'true' : 'false' }};
+    const selectedItems = new Set();
+    const confirmBtn = document.getElementById('confirm-selection');
+    
+    console.log("Fragment: Mode sélection:", isMultiple ? 'multiple' : 'simple');
+    
+    // ✅ Utiliser setTimeout pour s'assurer que les éléments sont dans le DOM
+    setTimeout(function() {
+        const mediaItems = document.querySelectorAll('.media-selector-item');
+        console.log("Fragment: Éléments média trouvés:", mediaItems.length);
+        
+        // Gestion de la sélection pour chaque item
+        mediaItems.forEach(function(item, index) {
+            console.log("Fragment: Attachement event listener à l'item", index);
+            
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const mediaId = this.dataset.mediaId;
+                const mediaUrl = this.dataset.mediaUrl || this.dataset.mediaThumbnailUrl;
+                const mediaName = this.dataset.mediaName;
+                const mediaAlt = this.dataset.mediaAlt;
+                
+                console.log("Fragment: Clic détecté sur média:", mediaId, mediaUrl);
+                
+                if (isMultiple) {
+                    // Gestion sélection multiple
+                    const checkbox = this.querySelector('.media-selector-checkbox');
+                    const indicator = this.querySelector('.selection-indicator');
+                    
+                    if (this.classList.contains('selected')) {
+                        // Désélectionner
+                        this.classList.remove('selected');
+                        checkbox.checked = false;
+                        indicator.style.display = 'none';
+                        selectedItems.delete(mediaId);
+                        console.log("Fragment: Média désélectionné:", mediaId);
+                    } else {
+                        // Sélectionner
+                        this.classList.add('selected');
+                        checkbox.checked = true;
+                        indicator.style.display = 'block';
+                        selectedItems.add(mediaId);
+                        console.log("Fragment: Média sélectionné:", mediaId);
+                    }
+                    
+                    // Afficher/masquer le bouton de confirmation
+                    if (confirmBtn) {
+                        confirmBtn.style.display = selectedItems.size > 0 ? 'block' : 'none';
+                        confirmBtn.textContent = `Valider (${selectedItems.size})`;
+                    }
+                    
+                } else {
+                    // Sélection simple - appeler immédiatement la fonction globale
+                    console.log("Fragment: Sélection simple, appel window.onMediaSelected");
+                    
+                    if (typeof window.onMediaSelected === 'function') {
+                        window.onMediaSelected(mediaId, mediaUrl, mediaName || mediaAlt);
+                    } else {
+                        console.error("Fragment: window.onMediaSelected non définie - vérifiez le JavaScript parent");
+                    }
+                }
+            });
+        });
+        
+        // Gestion des checkboxes pour sélection multiple
+        if (isMultiple) {
+            const checkboxes = document.querySelectorAll('.media-selector-checkbox');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function(e) {
+                    e.stopPropagation();
+                    const item = this.closest('.media-selector-item');
+                    if (item) {
+                        item.click();
+                    }
+                });
+            });
+            
+            // Bouton de confirmation pour sélection multiple
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    const selectedMedias = [];
+                    selectedItems.forEach(mediaId => {
+                        const item = document.querySelector(`[data-media-id="${mediaId}"]`);
+                        if (item) {
+                            selectedMedias.push({
+                                id: item.dataset.mediaId,
+                                url: item.dataset.mediaUrl,
+                                name: item.dataset.mediaName,
+                                alt: item.dataset.mediaAlt,
+                                width: item.dataset.mediaWidth,
+                                height: item.dataset.mediaHeight,
+                                mimeType: item.dataset.mediaType,
+                                isImage: item.dataset.mediaIsImage === 'true',
+                                fileSize: item.dataset.mediaFileSize
+                            });
+                        }
+                    });
+                    
+                    console.log("Fragment: Sélection multiple validée:", selectedMedias.length, "médias");
+                    
+                    if (typeof window.onMultipleMediasSelected === 'function') {
+                        window.onMultipleMediasSelected(selectedMedias);
+                    } else {
+                        console.log("Fragment: Médias sélectionnés:", selectedMedias);
+                    }
+                });
+            }
+        }
+        
+        console.log("Fragment: Event listeners attachés avec succès");
+        
+    }, 50); // Petit délai pour garantir que les éléments sont prêts
+    
+    // Gestion des filtres de type
+    const typeFilters = document.querySelectorAll('input[name="typeFilter"]');
+    typeFilters.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            console.log("Fragment: Changement de filtre:", this.value);
+            
+            // Recharger le modal avec le nouveau type
+            if (typeof window.onFilterTypeChange === 'function') {
+                window.onFilterTypeChange(this.value);
+            } else {
+                console.log("Fragment: window.onFilterTypeChange non définie, reload manuel nécessaire");
+            }
+        });
+    });
+    
+})();
+
+console.log("Fragment: JavaScript initialisé avec succès");
+</script>

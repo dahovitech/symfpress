@@ -1,0 +1,182 @@
+{# templates/admin/widgets/index.html.twig #}
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Gestion des Widgets{% endblock %}
+
+{% block main_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-puzzle-piece me-2"></i>
+                    Gestion des Widgets
+                </h4>
+                <div>
+                    <a href="{{ path('admin_widgets_create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nouveau Widget
+                    </a>
+                    <a href="{{ path('admin_widget_zones_index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-th-large"></i> Gérer les Zones
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {# Barre de recherche et filtres #}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <form method="get" class="d-flex">
+                            <input type="text" name="search" value="{{ search }}" 
+                                   placeholder="Rechercher des widgets..." class="form-control me-2">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <form method="get" class="d-flex">
+                            <select name="zone" class="form-select me-2" onchange="this.form.submit()">
+                                <option value="">Toutes les zones</option>
+                                {% for zone in zones %}
+                                    <option value="{{ zone.name }}" {{ selected_zone == zone.name ? 'selected' : '' }}>
+                                        {{ zone.title }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" name="search" value="{{ search }}">
+                        </form>
+                    </div>
+                </div>
+
+                {# Statistiques rapides #}
+                {% if stats is defined %}
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card bg-primary text-white p-3 rounded">
+                            <h6>Total Widgets</h6>
+                            <h3>{{ widgets|length }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card bg-success text-white p-3 rounded">
+                            <h6>Widgets Actifs</h6>
+                            <h3>{{ widgets|filter(w => w.isActive)|length }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card bg-info text-white p-3 rounded">
+                            <h6>Zones Disponibles</h6>
+                            <h3>{{ zones|length }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card bg-warning text-white p-3 rounded">
+                            <h6>Types de Widgets</h6>
+                            <h3>{{ widget_types|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {# Liste des widgets #}
+                {% if widgets|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Type</th>
+                                    <th>Zone</th>
+                                    <th>Statut</th>
+                                    <th>Ordre</th>
+                                    <th>Thème</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for widget in widgets %}
+                                    <tr class="{{ not widget.isActive ? 'table-secondary' : '' }}">
+                                        <td>
+                                            <strong>{{ widget.name }}</strong>
+                                            {% if not widget.isActive %}
+                                                <span class="badge bg-secondary ms-1">Inactif</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ widget_types[widget.type] ?? widget.type }}</span>
+                                        </td>
+                                        <td>{{ widget.zone.title }}</td>
+                                        <td>
+                                            <span class="badge {{ widget.isActive ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ widget.isActive ? 'Actif' : 'Inactif' }}
+                                            </span>
+                                        </td>
+                                        <td>{{ widget.sortOrder }}</td>
+                                        <td>
+                                            {% if widget.theme %}
+                                                <span class="badge bg-primary">{{ widget.theme }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Générique</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ path('admin_widgets_show', {id: widget.id}) }}" 
+                                                   class="btn btn-outline-primary" title="Voir">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ path('admin_widgets_edit', {id: widget.id}) }}" 
+                                                   class="btn btn-outline-warning" title="Éditer">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button class="btn btn-outline-secondary" 
+                                                        onclick="toggleWidget({{ widget.id }})" title="Activer/Désactiver">
+                                                    <i class="fas {{ widget.isActive ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-puzzle-piece fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Aucun widget trouvé</h5>
+                        <p class="text-muted">Commencez par créer votre premier widget.</p>
+                        <a href="{{ path('admin_widgets_create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Créer un Widget
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleWidget(widgetId) {
+    fetch(`/admin/widgets/${widgetId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Une erreur est survenue');
+    });
+}
+</script>
+{% endblock %}

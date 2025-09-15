@@ -157,6 +157,13 @@
             </div>
         </div>
         
+        {# Sauvegarde des champs du sidebar avant form_end() pour éviter l'erreur "already rendered" #}
+        {% set statusField = form_row(form.status) %}
+        {% set publishedAtField = form_row(form.publishedAt) %}
+        {% set commentStatusField = form_row(form.commentStatus) %}
+        {% set isFeaturedField = form_row(form.isFeatured) %}
+        {% set menuOrderField = form_row(form.menuOrder) %}
+        
         {{ form_end(form) }}
     </div>
     
@@ -168,19 +175,19 @@
                 <h6 class="mb-0"><i class="fas fa-cogs me-1"></i> Publication</h6>
             </div>
             <div class="card-body">
-                {{ form_row(form.status) }}
-                {{ form_row(form.publishedAt) }}
+                {{ statusField|raw }}
+                {{ publishedAtField|raw }}
                 
                 <div class="row">
                     <div class="col-6">
-                        {{ form_row(form.commentStatus) }}
+                        {{ commentStatusField|raw }}
                     </div>
                     <div class="col-6">
-                        {{ form_row(form.isFeatured) }}
+                        {{ isFeaturedField|raw }}
                     </div>
                 </div>
                 
-                {{ form_row(form.menuOrder) }}
+                {{ menuOrderField|raw }}
                 
                 <div class="d-grid gap-2 mt-3">
                     {{ form_widget(form.save) }}
@@ -194,7 +201,20 @@
                 <h6 class="mb-0"><i class="fas fa-image me-1"></i> Image mise en avant</h6>
             </div>
             <div class="card-body">
-                {{ form_row(form.featuredImage) }}
+                <div class="featured-image-selector">
+                    {{ form_row(form.featuredImage) }}
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="select-featured-image">
+                            <i class="fas fa-images me-1"></i>Sélectionner une image
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" id="remove-featured-image" style="display: none;">
+                            <i class="fas fa-trash me-1"></i>Supprimer
+                        </button>
+                    </div>
+                    <div id="featured-image-preview" class="mt-2" style="display: none;">
+                        <!-- Aperçu de l'image sélectionnée -->
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -240,11 +260,38 @@
     {{ parent() }}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Articles: Initialisation du sélecteur de médias');
+            
+            // Instance unique du modal Bootstrap (réutilisable)
+            const modalElement = document.getElementById('mediaModal');
+            const modal = new bootstrap.Modal(modalElement);
+            const modalBody = document.querySelector('#mediaModal .modal-body');
+            const selectFeaturedImageBtn = document.getElementById('select-featured-image');
+            const removeFeaturedImageBtn = document.getElementById('remove-featured-image');
+            const featuredImageSelect = document.querySelector('#{{ form.featuredImage.vars.id }}');
+            const featuredImagePreview = document.getElementById('featured-image-preview');
+            
+            // Variable globale pour la communication avec le fragment
+            window.onMediaSelected = function(mediaId, mediaUrl, mediaTitle) {
+                console.log('Articles: Média sélectionné:', mediaId, mediaUrl);
+                
+                // Mettre à jour le select
+                featuredImageSelect.value = mediaId;
+                
+                // Déclencher l'événement change pour mettre à jour l'aperçu
+                featuredImageSelect.dispatchEvent(new Event('change'));
+                
+                // Fermer le modal
+                modal.hide();
+                
+                console.log('Articles: Sélection terminée, modal fermé');
+            };
+            
             // Gestion des onglets de langues
             const languageTabs = document.querySelectorAll('#languageTabs button[data-bs-toggle="tab"]');
             languageTabs.forEach(tab => {
                 tab.addEventListener('shown.bs.tab', function (event) {
-                    console.log('Onglet activé:', event.target.getAttribute('data-bs-target'));
+                    console.log('Articles: Onglet activé:', event.target.getAttribute('data-bs-target'));
                 });
             });
             
@@ -253,11 +300,114 @@
             addMediaButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const targetField = this.getAttribute('data-target');
-                    // Ouvrir le modal de sélection de média
-                    // (à implémenter selon vos besoins)
-                    console.log('Ajouter média pour le champ:', targetField);
+                    console.log('Articles: Ajouter média pour le champ:', targetField);
+                    // TODO: Implémenter l'insertion de média dans le contenu
                 });
             });
+            
+            // Fonction pour mettre à jour l'aperçu
+            function updateFeaturedImagePreview() {
+                const selectedOption = featuredImageSelect.selectedOptions[0];
+                if (selectedOption && selectedOption.value) {
+                    console.log('Articles: Mise à jour aperçu pour média ID:', selectedOption.value);
+                    
+                    // Récupérer les infos du média sélectionné
+                    fetch(`{{ path('admin_media_info', {'id': '__ID__'}) }}`.replace('__ID__', selectedOption.value))
+                        .then(response => response.json())
+                        .then(media => {
+                            featuredImagePreview.innerHTML = `
+                                <div class="border rounded p-2 d-flex align-items-center">
+                                    <img src="${media.thumbnailUrl || media.url}" 
+                                         alt="${media.alt || media.originalName}" 
+                                         class="me-2" 
+                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                                    <div>
+                                        <div class="fw-bold">${media.originalName}</div>
+                                        <small class="text-muted">${media.fileSize}</small>
+                                    </div>
+                                </div>
+                            `;
+                            featuredImagePreview.style.display = 'block';
+                            removeFeaturedImageBtn.style.display = 'inline-block';
+                            console.log('Articles: Aperçu mis à jour avec succès');
+                        })
+                        .catch(error => {
+                            console.error('Articles: Erreur lors de la récupération des infos du média:', error);
+                            featuredImagePreview.innerHTML = '<div class="alert alert-danger">Erreur de chargement</div>';
+                        });
+                } else {
+                    featuredImagePreview.style.display = 'none';
+                    removeFeaturedImageBtn.style.display = 'none';
+                    console.log('Articles: Aperçu masqué (aucun média sélectionné)');
+                }
+            }
+            
+            // Initialiser l'aperçu au chargement de la page
+            updateFeaturedImagePreview();
+            
+            // Écouter les changements sur le select
+            featuredImageSelect.addEventListener('change', updateFeaturedImagePreview);
+            
+            // Bouton pour ouvrir le sélecteur de média
+            if (selectFeaturedImageBtn) {
+                selectFeaturedImageBtn.addEventListener('click', function() {
+                    console.log('Articles: Ouverture du sélecteur de médias');
+                    
+                    // Afficher le spinner de chargement
+                    modalBody.innerHTML = '<div class="text-center p-4"><div class="spinner-border" role="status"><span class="visually-hidden">Chargement...</span></div></div>';
+                    
+                    // Charger le fragment de sélection de média
+                    fetch('{{ path('admin_media_selector_fragment', {'type': 'images'}) }}')
+                        .then(response => response.text())
+                        .then(html => {
+                            console.log('Articles: Contenu chargé, longueur:', html.length);
+                            
+                            // Injecter le contenu dans le modal
+                            modalBody.innerHTML = html;
+                            
+                            // ✅ SOLUTION : Attacher les event listeners APRÈS injection avec setTimeout
+                            setTimeout(function() {
+                                const mediaItems = modalBody.querySelectorAll('.media-selector-item');
+                                console.log('Articles: Event listeners à attacher:', mediaItems.length);
+                                
+                                mediaItems.forEach((item, index) => {
+                                    item.addEventListener('click', function() {
+                                        const mediaId = this.dataset.mediaId;
+                                        const mediaUrl = this.dataset.mediaUrl || this.dataset.mediaThumbnailUrl;
+                                        const mediaTitle = this.dataset.mediaName || this.dataset.mediaAlt;
+                                        
+                                        console.log('Articles: Clic sur média:', mediaId, 'URL:', mediaUrl);
+                                        
+                                        // Appeler la fonction globale de sélection
+                                        if (typeof window.onMediaSelected === 'function') {
+                                            window.onMediaSelected(mediaId, mediaUrl, mediaTitle);
+                                        } else {
+                                            console.error('Articles: window.onMediaSelected non définie');
+                                        }
+                                    });
+                                    
+                                    console.log('Articles: Event listener attaché à l\'item', index);
+                                });
+                            }, 100); // Délai pour s'assurer que le DOM est prêt après injection
+                        })
+                        .catch(error => {
+                            console.error('Articles: Erreur chargement médias:', error);
+                            modalBody.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement du sélecteur de médias</div>';
+                        });
+                    
+                    // Ouvrir le modal (instance unique réutilisée)
+                    modal.show();
+                });
+            }
+            
+            // Bouton pour supprimer l'image mise en avant
+            if (removeFeaturedImageBtn) {
+                removeFeaturedImageBtn.addEventListener('click', function() {
+                    console.log('Articles: Suppression de l\'image mise en avant');
+                    featuredImageSelect.value = '';
+                    updateFeaturedImagePreview();
+                });
+            }
             
             // Validation du formulaire
             const form = document.querySelector('.needs-validation');
@@ -266,10 +416,15 @@
                     if (!form.checkValidity()) {
                         event.preventDefault();
                         event.stopPropagation();
+                        console.log('Articles: Formulaire invalide, soumission bloquée');
+                    } else {
+                        console.log('Articles: Formulaire valide, soumission autorisée');
                     }
                     form.classList.add('was-validated');
                 }, false);
             }
+            
+            console.log('Articles: Initialisation terminée avec succès');
         });
     </script>
 {% endblock %}

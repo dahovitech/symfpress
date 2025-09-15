@@ -15,13 +15,21 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
     
+    # Configuration du service Media avec sécurité renforcée
     App\Service\MediaService:
         arguments:
             $projectDir: '%kernel.project_dir%'
+    
+    # Service de purification HTML pour la sécurité
+    App\Service\HtmlPurifierService: ~
     
     # Configuration des services d'extensibilité
     App\Extension\PluginManager:
@@ -31,7 +39,65 @@ services:
     App\Extension\ThemeManager:
         arguments:
             $projectDir: '%kernel.project_dir%'
+    
+    # Configuration du service ThemeManager alternatif
+    App\Service\ThemeManager:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+    
+    # Configuration des services de templates et thèmes
+    App\Service\TemplateResolver:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+    
+    # EventSubscriber pour la configuration dynamique des thèmes  
+    App\EventSubscriber\ThemeSubscriber: ~
+    
+    # Configuration des services de Rate Limiting
+    App\Service\RateLimitService:
+        arguments:
+            $loginLimiter: '@limiter.login'
+            $apiLimiter: '@limiter.api'
+            $adminSensitiveLimiter: '@limiter.admin_sensitive'
+            $contentModificationLimiter: '@limiter.content_modification'
+            $mediaUploadLimiter: '@limiter.media_upload'
+            $passwordResetLimiter: '@limiter.password_reset'
+            $searchLimiter: '@limiter.search'
+            $securityStrictLimiter: '@limiter.security_strict'
+
+    # Configuration des services de widgets
+    App\Service\WidgetManager:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $widgetRepository: '@App\Repository\WidgetRepository'
+            $widgetZoneRepository: '@App\Repository\WidgetZoneRepository'
+            $logger: '@logger'
+            $themeManager: '@App\Extension\ThemeManager'
+
+    App\Service\WidgetRenderer:
+        arguments:
+            $twig: '@twig'
+            $widgetManager: '@App\Service\WidgetManager'
+            $postRepository: '@App\Repository\PostRepository'
+            $logger: '@logger'
+
+    App\Twig\WidgetExtension:
+        arguments:
+            $widgetRenderer: '@App\Service\WidgetRenderer'
+        tags:
+            - { name: twig.extension }
+
+    App\Twig\ContentExtension:
+        tags:
+            - { name: twig.extension }
+
+    # Extension Twig pour les thèmes avec isolation admin/frontend
+    App\Twig\ThemeExtension:
+        arguments:
+            $templateResolver: '@App\Service\TemplateResolver'
+        tags:
+            - { name: twig.extension }
 
 # Import de la configuration des extensions
 imports:
-    - { resource: services_extensions.yaml }
+    - { resource: services_extensions.yaml, ignore_errors: true }

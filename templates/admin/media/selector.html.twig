@@ -77,10 +77,12 @@
                         <!-- Aperçu -->
                         <div class="media-preview" style="height: 120px; overflow: hidden; cursor: pointer;">
                             {% if media.isImage %}
-                                <img src="{{ media.url }}" 
+                                {% set thumbnailUrl = path('admin_media_thumbnail', {'id': media.id, 'w': 150, 'h': 150}) %}
+                                <img src="{{ thumbnailUrl }}" 
                                      alt="{{ media.alt ?? media.originalName }}" 
                                      class="w-100 h-100" 
-                                     style="object-fit: cover;">
+                                     style="object-fit: cover;"
+                                     onerror="this.onerror=null; this.src='{{ media.url }}';">
                             {% else %}
                                 <div class="d-flex align-items-center justify-content-center h-100 bg-light">
                                     {% if media.isPdf %}

@@ -1,0 +1,30 @@
+# Configuration des services pour le système de widgets
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    # Service de gestion des widgets
+    App\Service\WidgetManager:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $widgetRepository: '@App\Repository\WidgetRepository'
+            $widgetZoneRepository: '@App\Repository\WidgetZoneRepository'
+            $logger: '@logger'
+            $themeManager: '@App\Service\ThemeManager'
+
+    # Service de rendu des widgets
+    App\Service\WidgetRenderer:
+        arguments:
+            $twig: '@twig'
+            $widgetManager: '@App\Service\WidgetManager'
+            $postRepository: '@App\Repository\PostRepository'
+            $logger: '@logger'
+
+    # Extension Twig pour les widgets
+    App\Twig\WidgetExtension:
+        arguments:
+            $widgetRenderer: '@App\Service\WidgetRenderer'
+        tags:
+            - { name: twig.extension }

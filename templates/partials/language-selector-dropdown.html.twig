@@ -1,0 +1,28 @@
+{#
+    Sélecteur de langue dropdown Bootstrap
+    Usage: {{ include('partials/language-selector-dropdown.html.twig') }}
+#}
+{% if is_multilingual() %}
+    {% set current = get_current_language() %}
+    <div class="language-selector dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                data-bs-toggle="dropdown" aria-expanded="false" title="Changer de langue">
+            <i class="fas fa-globe me-1"></i>
+            {{ current.name }}
+        </button>
+        <ul class="dropdown-menu">
+            {% for language in get_available_languages() %}
+                <li>
+                    <a class="dropdown-item {% if language.id == current.id %}active{% endif %}" 
+                       href="{{ language_switch_url(language.code) }}"
+                       {% if language.id == current.id %}aria-current="true"{% endif %}>
+                        {{ language.name }}
+                        {% if language.id == current.id %}
+                            <i class="fas fa-check ms-2 text-primary"></i>
+                        {% endif %}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

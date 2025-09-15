@@ -1,0 +1,22 @@
+{#
+    Sélecteur de langue minimal pour navbar/footer
+    Usage: {{ include('partials/language-selector-minimal.html.twig') }}
+#}
+{% if is_multilingual() %}
+    {% set current = get_current_language() %}
+    <div class="language-selector minimal">
+        {% for language in get_available_languages() %}
+            {% if language.id != current.id %}
+                <a href="{{ language_switch_url(language.code) }}" 
+                   class="language-link text-decoration-none me-2"
+                   title="Changer vers {{ language.name }}">
+                    {{ language.code|upper }}
+                </a>
+            {% else %}
+                <span class="current-language text-muted me-2" title="Langue actuelle: {{ language.name }}">
+                    {{ language.code|upper }}
+                </span>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

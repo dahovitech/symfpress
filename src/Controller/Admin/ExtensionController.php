@@ -125,6 +125,9 @@ class ExtensionController extends AbstractController
     #[Route('/themes/activate/{themeName}', name: 'admin_themes_activate')]
     public function activateTheme(string $themeName): Response
     {
+        // Découvrir les thèmes avant l'activation
+        $this->themeManager->discoverThemes();
+        
         $success = $this->themeManager->activateTheme($themeName);
         
         if ($success) {

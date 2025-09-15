@@ -1,4 +1,14 @@
-{% extends 'frontend/base.html.twig' %}
+{# Template qui gère automatiquement le choix entre thème et template par défaut #}
+{% if theme_exists('base.html.twig') %}
+    {# Utilise le thème si disponible #}
+    {% set base_template = 'frontend/base_themed.html.twig' %}
+{% else %}
+    {# Utilise le template par défaut #}
+    {% set base_template = 'frontend/base.html.twig' %}
+{% endif %}
+
+{# Inclut le template de base approprié avec le contenu de la page #}
+{% embed base_template %}
 
 {% block title %}{{ translation.title }} - SymfPress{% endblock %}
 
@@ -73,7 +83,7 @@
                 
                 <!-- Contenu principal -->
                 <div class="post-content">
-                    {{ translation.content|raw }}
+                    {{ translation.content|purify }}
                 </div>
                 
                 <!-- Partage social -->
@@ -264,3 +274,4 @@
         }
     </style>
 {% endblock %}
+{% endembed %}

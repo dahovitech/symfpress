@@ -1,0 +1,59 @@
+{#
+    Sélecteur de langue avec drapeaux
+    Usage: {{ include('partials/language-selector-flags.html.twig') }}
+    
+    Note: Nécessite des images de drapeaux dans public/images/flags/
+    Format attendu: fr.svg, en.svg, etc.
+#}
+{% if is_multilingual() %}
+    {% set current = get_current_language() %}
+    <div class="language-selector language-flags d-flex gap-2">
+        {% for language in get_available_languages() %}
+            <a href="{{ language_switch_url(language.code) }}" 
+               class="language-flag-link {% if language.id == current.id %}active{% endif %}"
+               title="{{ language.name }}"
+               {% if language.id == current.id %}aria-current="true"{% endif %}>
+                <img src="/images/flags/{{ language.code|lower }}.svg" 
+                     alt="{{ language.name }}" 
+                     class="flag-icon"
+                     width="24" 
+                     height="16"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="flag-text" style="display:none;">{{ language.code|upper }}</span>
+            </a>
+        {% endfor %}
+    </div>
+
+    <style>
+        .language-flags .language-flag-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .language-flags .language-flag-link:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+        
+        .language-flags .language-flag-link.active {
+            border-color: #007bff;
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        
+        .language-flags .flag-icon {
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        .language-flags .flag-text {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #6c757d;
+        }
+    </style>
+{% endif %}

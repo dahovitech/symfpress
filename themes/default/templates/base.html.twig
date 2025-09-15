@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SymfPress - Thème par défaut{% endblock %}</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        header {
+            background-color: #007cba;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        main {
+            background-color: white;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+            margin-top: 2rem;
+        }
+        .sidebar {
+            background-color: #f9f9f9;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+    </style>
+    
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>{% block site_title %}SymfPress{% endblock %}</h1>
+            <nav>
+                {% block navigation %}
+                    {# Menu principal dynamique #}
+                    {{ render_menu('primary', {
+                        template: 'partials/menu-horizontal.html.twig',
+                        nav_class: 'main-navigation',
+                        link_class: 'nav-link',
+                        link_style: 'color: white; margin: 0 1rem; text-decoration: none;',
+                        active_class: 'active'
+                    }) }}
+                    
+                    {# Fallback si aucun menu n'est défini #}
+                    {% if not has_menus('primary') %}
+                        <a href="/" style="color: white; margin: 0 1rem;">Accueil</a>
+                        <a href="/blog" style="color: white; margin: 0 1rem;">Blog</a>
+                        <a href="/contact" style="color: white; margin: 0 1rem;">Contact</a>
+                    {% endif %}
+                    
+                    {# Language selector #}
+                    {% if is_multilingual() %}
+                        <div style="display: inline-block; margin-left: 2rem; border-left: 1px solid rgba(255,255,255,0.3); padding-left: 1rem;">
+                            <span style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-right: 0.5rem;">
+                                <i style="margin-right: 0.25rem;">🌐</i>Langue:
+                            </span>
+                            {% for language in get_available_languages() %}
+                                {% if language.id != get_current_language().id %}
+                                    <a href="{{ language_switch_url(language.code) }}" style="color: white; margin: 0 0.25rem; text-decoration: none; font-size: 0.9rem;" title="{{ language.name }}">{{ language.code|upper }}</a>
+                                {% else %}
+                                    <span style="color: white; font-weight: bold; margin: 0 0.25rem; font-size: 0.9rem;">{{ language.code|upper }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endblock %}
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            {% block content %}
+                <h2>Bienvenue sur SymfPress</h2>
+                <p>Ceci est le template de base du thème par défaut.</p>
+            {% endblock %}
+        </main>
+
+        {% block sidebar %}
+            <div class="sidebar">
+                <h3>Barre latérale</h3>
+                <p>Zone pour les widgets de la barre latérale.</p>
+            </div>
+        {% endblock %}
+    </div>
+
+    <footer>
+        <div class="container">
+            {% block footer %}
+                {# Menu de pied de page #}
+                {% if has_menus('footer') %}
+                    <div style="margin-bottom: 1rem;">
+                        {{ render_menu('footer', {
+                            template: 'partials/menu-horizontal.html.twig',
+                            nav_class: 'footer-navigation',
+                            link_class: 'footer-link',
+                            link_style: 'color: #ccc; margin: 0 0.5rem; text-decoration: none; font-size: 0.9rem;',
+                            active_class: 'active'
+                        }) }}
+                    </div>
+                {% endif %}
+                
+                <p>&copy; {{ "now"|date("Y") }} SymfPress - Thème par défaut</p>
+                
+                {# Language selector in footer #}
+                {% if is_multilingual() %}
+                    <div style="margin-top: 0.5rem; font-size: 0.8rem;">
+                        <span style="color: #ccc;">🌐 Langues disponibles:</span>
+                        {% for language in get_available_languages() %}
+                            {% if language.id != get_current_language().id %}
+                                <a href="{{ language_switch_url(language.code) }}" style="color: #ccc; margin: 0 0.25rem; text-decoration: none;" title="{{ language.name }}">{{ language.code|upper }}</a>
+                            {% else %}
+                                <span style="color: white; font-weight: bold; margin: 0 0.25rem;">{{ language.code|upper }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endblock %}
+        </div>
+    </footer>
+
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

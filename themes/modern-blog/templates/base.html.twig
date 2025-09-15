@@ -152,36 +152,53 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ path('frontend_home') }}">
-                            <i class="fas fa-home me-1"></i> Accueil
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ path('frontend_posts') }}">
-                            <i class="fas fa-newspaper me-1"></i> Articles
-                        </a>
-                    </li>
-                    <!-- Categories dynamiques -->
-                    {% if categories is defined %}
-                        {% for category in categories %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('frontend_category', {slug: category.slug}) }}">
-                                    {{ category.name }}
-                                </a>
-                            </li>
-                        {% endfor %}
-                    {% endif %}
-                </ul>
+                {# Menu principal dynamique #}
+                {{ render_menu('primary', {
+                    menu_class: 'navbar-nav me-auto',
+                    item_class: 'nav-item',
+                    link_class: 'nav-link',
+                    dropdown_class: 'dropdown',
+                    dropdown_menu_class: 'dropdown-menu',
+                    dropdown_item_class: 'dropdown-item',
+                    active_class: 'active'
+                }) }}
+                
+                {# Fallback si aucun menu n'est défini #}
+                {% if not has_menus('primary') %}
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('frontend_home') }}">
+                                <i class="fas fa-home me-1"></i> Accueil
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ path('frontend_posts') }}">
+                                <i class="fas fa-newspaper me-1"></i> Articles
+                            </a>
+                        </li>
+                        <!-- Categories dynamiques -->
+                        {% if categories is defined %}
+                            {% for category in categories %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ path('frontend_category', {slug: category.slug}) }}">
+                                        {{ category.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                {% endif %}
                 
                 <!-- Search -->
-                <form class="d-flex" action="{{ path('frontend_search') }}" method="GET">
+                <form class="d-flex me-3" action="{{ path('frontend_search') }}" method="GET">
                     <input class="form-control me-2" type="search" placeholder="Rechercher..." name="q">
                     <button class="btn btn-outline-primary" type="submit">
                         <i class="fas fa-search"></i>
                     </button>
                 </form>
+                
+                <!-- Language Selector -->
+                {{ include('partials/language-selector-dropdown.html.twig') }}
             </div>
         </div>
     </nav>
@@ -273,9 +290,34 @@
                 <div class="col-md-6">
                     <h5>{{ site_name|default('SymfPress') }}</h5>
                     <p>Propulsé par SymfPress - Un CMS moderne et extensible</p>
+                    
+                    {# Menu de pied de page #}
+                    {% if has_menus('footer') %}
+                        <div class="footer-menu mt-3">
+                            {{ render_menu('footer', {
+                                menu_class: 'list-inline',
+                                item_class: 'list-inline-item',
+                                link_class: 'text-light',
+                                active_class: 'fw-bold'
+                            }) }}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p>&copy; {{ 'now'|date('Y') }} {{ site_name|default('SymfPress') }}. Tous droits réservés.</p>
+                    
+                    {# Menu réseaux sociaux #}
+                    {% if has_menus('social') %}
+                        <div class="social-menu mb-3">
+                            {{ render_menu('social', {
+                                menu_class: 'd-flex justify-content-md-end justify-content-center',
+                                item_class: 'me-3',
+                                link_class: 'text-light fs-4',
+                                template: 'partials/menu-simple.html.twig'
+                            }) }}
+                        </div>
+                    {% endif %}
+                    
                     <p>
                         <small>
                             Thème: Modern Blog v1.0.0 |
@@ -283,6 +325,22 @@
                             <a href="{{ path('frontend_rss') }}" class="text-light">RSS</a>
                         </small>
                     </p>
+                    
+                    <!-- Language selector in footer -->
+                    {% if is_multilingual() %}
+                        <div class="language-footer mt-2">
+                            <small class="text-light opacity-75">
+                                <i class="fas fa-globe me-1"></i>Langues:
+                                {% for language in get_available_languages() %}
+                                    {% if language.id != get_current_language().id %}
+                                        <a href="{{ language_switch_url(language.code) }}" class="text-light text-decoration-none ms-2" title="{{ language.name }}">{{ language.code|upper }}</a>
+                                    {% else %}
+                                        <span class="text-light fw-bold ms-2">{{ language.code|upper }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </small>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

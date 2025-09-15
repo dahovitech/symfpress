@@ -1,0 +1,37 @@
+{# Template horizontal pour l'affichage des menus - Navigation simple #}
+{%- if menus is defined and menus|length > 0 -%}
+    <nav class="{{ options.nav_class|default('main-navigation') }}">
+        {%- for menu in menus -%}
+            {%- if menu.isActive -%}
+                {{ _self.render_menu_link(menu, options, current_language) }}
+            {%- endif -%}
+        {%- endfor -%}
+    </nav>
+{%- endif -%}
+
+{%- macro render_menu_link(menu, options, current_language) -%}
+    {%- set translation = menu.getTranslationForLanguage(current_language) -%}
+    {%- set title = translation ? translation.title : menu.getDisplayTitle(current_language) -%}
+    {%- set url = menu.getComputedUrl ?: '#' -%}
+    {%- set target = menu.target|default('_self') -%}
+    {%- set cssClass = menu.cssClass ?: '' -%}
+    
+    {# Classes CSS pour le lien #}
+    {%- set linkClasses = [options.link_class|default('nav-link')] -%}
+    
+    {%- if cssClass -%}
+        {%- set linkClasses = linkClasses|merge([cssClass]) -%}
+    {%- endif -%}
+    
+    {# Détecter si le lien est actif basé sur l'URL courante #}
+    {%- if app.request.pathInfo == url -%}
+        {%- set linkClasses = linkClasses|merge([options.active_class|default('active')]) -%}
+    {%- endif -%}
+
+    <a class="{{ linkClasses|join(' ') }}" 
+       href="{{ url }}" 
+       target="{{ target }}"
+       style="{{ options.link_style|default('color: white; margin: 0 1rem; text-decoration: none;') }}">
+        {{ title }}
+    </a>
+{%- endmacro -%}

@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
 #[ORM\Table(name: 'comment')]
@@ -26,6 +27,7 @@ class Comment
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 10, max: 2000)]
+    #[Assert\Callback(callback: [self::class, 'validateCommentContent'])]
     private ?string $content = null;
 
     #[ORM\Column(length: 20)]
@@ -39,17 +41,37 @@ class Comment
     private ?\DateTimeInterface $updatedAt = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\Length(
+        min: 2,
+        max: 100,
+        minMessage: 'Le nom doit contenir au moins {{ limit }} caractères.',
+        maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-ZÀ-ÿŒœ\s\-\']{2,100}$/u',
+        message: 'Le nom ne peut contenir que des lettres, espaces, traits d\'union et apostrophes.'
+    )]
     private ?string $authorName = null;
 
     #[ORM\Column(length: 180, nullable: true)]
-    #[Assert\Email]
+    #[Assert\Email(
+        mode: 'strict',
+        message: 'L\'adresse email doit être valide.'
+    )]
+    #[Assert\Length(max: 180)]
     private ?string $authorEmail = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\Url]
+    #[Assert\Url(
+        message: 'L\'URL du site web doit être valide.'
+    )]
+    #[Assert\Length(max: 255)]
     private ?string $authorWebsite = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Assert\Ip(
+        message: 'L\'adresse IP doit être valide.'
+    )]
     private ?string $authorIp = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -324,5 +346,53 @@ class Comment
             $this->getAuthorName() ?? 'Anonymous', 
             $this->createdAt?->format('Y-m-d H:i') ?? ''
         );
+    }
+
+    /**
+     * Valide que le contenu du commentaire est sécurisé
+     */
+    public static function validateCommentContent($value, ExecutionContextInterface $context): void
+    {
+        if (empty($value)) {
+            return;
+        }
+
+        // Interdiction totale des balises HTML dans les commentaires
+        if (preg_match('/<[^>]*>/', $value)) {
+            $context->buildViolation('Les balises HTML ne sont pas autorisées dans les commentaires.')
+                ->addViolation();
+            return;
+        }
+
+        // Vérification des tentatives d’injection de script
+        $dangerousPatterns = [
+            '/javascript:/i',
+            '/vbscript:/i',
+            '/data:/i',
+            '/on\w+\s*=/i', // attributs d’évènements comme onclick, onload, etc.
+            '/<script/i',
+            '/<\/script/i'
+        ];
+
+        foreach ($dangerousPatterns as $pattern) {
+            if (preg_match($pattern, $value)) {
+                $context->buildViolation('Le contenu contient des éléments potentiellement dangereux.')
+                    ->addViolation();
+                return;
+            }
+        }
+
+        // Vérification du spam basique (liens multiples)
+        $urlCount = preg_match_all('/https?:\/\/\S+/', $value);
+        if ($urlCount > 2) {
+            $context->buildViolation('Le commentaire ne peut contenir plus de 2 liens.')
+                ->addViolation();
+        }
+
+        // Vérification des caractères répétitifs (spam)
+        if (preg_match('/([A-Za-z0-9])\1{10,}/', $value)) {
+            $context->buildViolation('Le commentaire ne peut contenir de suites de caractères répétitifs excessives.')
+                ->addViolation();
+        }
     }
 }

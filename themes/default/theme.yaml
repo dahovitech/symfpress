@@ -1,0 +1,40 @@
+name: "Thème par défaut"
+description: "Thème de base pour SymfPress avec templates minimaux"
+version: "1.0.0"
+author: "SymfPress"
+supports:
+  - menus
+  - widgets
+  - post-thumbnails
+  - custom-logo
+
+# Configuration des zones de widgets
+widget_areas:
+  sidebar:
+    name: "Barre latérale"
+    description: "Widgets affichés dans la barre latérale"
+  footer:
+    name: "Pied de page"
+    description: "Widgets affichés dans le pied de page"
+
+# Tailles d'images supportées
+image_sizes:
+  thumbnail:
+    width: 150
+    height: 150
+    crop: true
+  medium:
+    width: 300
+    height: 300
+    crop: false
+  large:
+    width: 1024
+    height: 768
+    crop: false
+
+# Couleurs du thème
+colors:
+  primary: "#007cba"
+  secondary: "#666666"
+  text: "#333333"
+  background: "#ffffff"

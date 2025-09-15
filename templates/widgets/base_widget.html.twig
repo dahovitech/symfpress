@@ -1,0 +1,23 @@
+{# templates/widgets/base_widget.html.twig #}
+{# Template de base pour tous les widgets #}
+
+<div class="widget widget-{{ widget.type }}" 
+     data-widget-id="{{ widget.id }}" 
+     data-widget-type="{{ widget.type }}">
+    
+    {% if widget.name %}
+        <div class="widget-title">
+            <h3>{{ widget.name }}</h3>
+        </div>
+    {% endif %}
+    
+    <div class="widget-content">
+        {% block widget_content %}
+            {% if widget.content %}
+                {{ widget.content|purify }}
+            {% else %}
+                <p class="widget-no-content">Contenu du widget à définir</p>
+            {% endif %}
+        {% endblock %}
+    </div>
+</div>

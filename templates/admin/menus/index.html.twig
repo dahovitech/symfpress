@@ -11,7 +11,43 @@
 </nav>
 {% endblock %}
 
+{% block stylesheets %}
+{{ parent() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.css">
+<style>
+    .menu-sortable {
+        min-height: 100px;
+    }
+    .sortable-ghost {
+        opacity: 0.4;
+        background-color: #f8f9fa;
+    }
+    .sortable-chosen {
+        background-color: #e9ecef;
+    }
+    .sortable-drag {
+        transform: rotate(2deg);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 9999;
+    }
+    .fa-grip-vertical {
+        cursor: grab;
+        color: #6c757d;
+        transition: color 0.2s ease;
+    }
+    .fa-grip-vertical:hover {
+        color: #495057;
+    }
+    .fa-grip-vertical:active {
+        cursor: grabbing;
+    }
+</style>
+{% endblock %}
+
 {% block admin_content %}
+<!-- URL pour la réorganisation -->
+<meta name="menu-reorder-url" content="{{ path('admin_menus_reorder') }}">
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">Gestion des menus</h1>
     <div>
@@ -63,7 +99,15 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">{{ locations[currentLocation] }} ({{ menus|length }} élément(s))</h5>
         {% if menus|length > 0 %}
-            <small class="text-muted">Glissez-déposez pour réorganiser</small>
+            <div class="d-flex align-items-center">
+                <small class="text-muted me-3">
+                    <i class="fas fa-grip-vertical me-1"></i>
+                    Glissez-déposez pour réorganiser
+                </small>
+                <button type="button" class="btn btn-sm btn-success" id="save-menu-order" style="display: none;">
+                    <i class="fas fa-save"></i> Sauvegarder
+                </button>
+            </div>
         {% endif %}
     </div>
     <div class="card-body p-0">
@@ -90,7 +134,7 @@
                             <th width="150">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="menu-sortable">
+                    <tbody id="menu-sortable" class="menu-sortable">
                         {% for menu in menus %}
                             {{ _self.render_menu_row(menu, currentLanguage, 0) }}
                         {% endfor %}
@@ -105,12 +149,12 @@
     {% set translation = menu.getTranslationForLanguage(currentLanguage) %}
     <tr data-menu-id="{{ menu.id }}" class="menu-item" style="{{ level > 0 ? 'background-color: #f8f9fa;' : '' }}">
         <td>
-            <i class="fas fa-grip-vertical text-muted" style="cursor: move;"></i>
+            <i class="fas fa-grip-vertical text-muted drag-handle" style="cursor: move;"></i>
         </td>
         <td>
             <div style="padding-left: {{ level * 20 }}px;">
                 {% if level > 0 %}<i class="fas fa-level-up-alt fa-rotate-90 text-muted me-1"></i>{% endif %}
-                <strong>{{ translation ? translation.title : menu.generateDefaultTitle(currentLanguage) }}</strong>
+                <strong>{{ translation ? translation.title : menu.getDisplayTitle(currentLanguage) }}</strong>
                 {% if translation and translation.description %}
                     <br><small class="text-muted">{{ translation.description|slice(0, 60) }}{% if translation.description|length > 60 %}...{% endif %}</small>
                 {% endif %}
@@ -133,7 +177,7 @@
             </span>
         </td>
         <td>
-            {% set computedUrl = menu.computedUrl %}
+            {% set computedUrl = menu.getComputedUrl %}
             {% if computedUrl %}
                 <small><code>{{ computedUrl }}</code></small>
             {% else %}
@@ -147,7 +191,7 @@
                 <span class="badge bg-danger">Inactif</span>
             {% endif %}
         </td>
-        <td>{{ menu.menuOrder }}</td>
+        <td class="menu-order">{{ menu.menuOrder }}</td>
         <td>
             <div class="btn-group btn-group-sm" role="group">
                 <a href="{{ path('admin_menus_show', {'id': menu.id}) }}" 
@@ -174,19 +218,137 @@
         {{ _self.render_menu_row(child, currentLanguage, level + 1) }}
     {% endfor %}
 {% endmacro %}
+{% endblock %}
 
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 function changeLocation(location) {
     window.location.href = "{{ path('admin_menus_index') }}?location=" + location;
 }
 
-// Sortable functionality (basic implementation)
-// For production, you might want to use a library like SortableJS
+// Menu Manager
 document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.getElementById('menu-sortable');
-    if (tbody && tbody.children.length > 0) {
-        // Enable drag and drop functionality here if needed
-        // This would require additional JavaScript libraries
+    if (!tbody || tbody.children.length === 0) return;
+
+    // Initialiser SortableJS
+    const sortable = new Sortable(tbody, {
+        group: 'menu-items',
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        animation: 150,
+        fallbackOnBody: true,
+        swapThreshold: 0.65,
+        onUpdate: function(evt) {
+            saveMenuOrder();
+            showSaveButton();
+        }
+    });
+
+    function showSaveButton() {
+        const saveBtn = document.getElementById('save-menu-order');
+        if (saveBtn) {
+            saveBtn.style.display = 'inline-block';
+        }
+    }
+
+    function hideSaveButton() {
+        const saveBtn = document.getElementById('save-menu-order');
+        if (saveBtn) {
+            saveBtn.style.display = 'none';
+        }
+    }
+
+    function saveMenuOrder() {
+        const items = [];
+        const rows = tbody.querySelectorAll('tr[data-menu-id]');
+        
+        rows.forEach((row, index) => {
+            const menuId = row.getAttribute('data-menu-id');
+            if (menuId) {
+                items.push({
+                    id: parseInt(menuId),
+                    order: index,
+                    parent: null
+                });
+            }
+        });
+
+        fetch('{{ path("admin_menus_reorder") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                items: items
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage('Ordre du menu mis à jour avec succès !', 'success');
+                updateOrderNumbers();
+                hideSaveButton();
+            } else {
+                showMessage('Erreur lors de la mise à jour de l\'ordre du menu', 'danger');
+                console.error('Erreur:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showMessage('Erreur de connexion lors de la mise à jour', 'danger');
+        });
+    }
+
+    function updateOrderNumbers() {
+        const rows = tbody.querySelectorAll('tr[data-menu-id]');
+        rows.forEach((row, index) => {
+            const orderCell = row.querySelector('.menu-order');
+            if (orderCell) {
+                orderCell.textContent = index;
+            }
+        });
+    }
+
+    function showMessage(message, type) {
+        // Supprimer les anciens messages
+        const existingMessages = document.querySelectorAll('.menu-manager-alert');
+        existingMessages.forEach(msg => msg.remove());
+
+        // Créer le nouveau message
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show menu-manager-alert`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // Insérer le message
+        const contentArea = document.querySelector('.admin-content');
+        if (contentArea) {
+            contentArea.insertBefore(alert, contentArea.firstChild);
+        }
+
+        // Masquer automatiquement après 5 secondes
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 150);
+            }
+        }, 5000);
+    }
+
+    // Bouton de sauvegarde manuelle
+    const saveBtn = document.getElementById('save-menu-order');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            saveMenuOrder();
+        });
     }
 });
 </script>

@@ -21,3 +21,7 @@ services:
     # Extension Controller
     App\Controller\Admin\ExtensionController:
         tags: ['controller.service_arguments']
+    
+    # Language Extension pour Twig
+    App\Twig\LanguageExtension:
+        tags: ['twig.extension']

@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Media;
 use App\Entity\User;
+use App\Exception\MediaException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -24,9 +25,67 @@ class MediaManager
 
     public function uploadFile(UploadedFile $file, User $user): Media
     {
+        // Vérifier que le fichier est valide
+        if (!$file->isValid()) {
+            throw MediaException::uploadFailed($file->getClientOriginalName(), 'Fichier invalide ou corrompu');
+        }
+        
+        // Stratégie robuste : copier immédiatement le fichier temporaire si possible
+        $tempPath = $file->getPathname();
+        $tempBackupPath = null;
+        $originalTempPath = $tempPath; // Conserver le chemin original pour le move() final
+        
+        if (file_exists($tempPath) && is_readable($tempPath)) {
+            // Créer une copie immédiate du fichier temporaire
+            $tempBackupPath = sys_get_temp_dir() . '/' . 'symfony_upload_backup_' . uniqid() . '.tmp';
+            if (copy($tempPath, $tempBackupPath)) {
+                // Utiliser immédiatement la copie de sauvegarde pour éviter les problèmes de timing
+                $tempPath = $tempBackupPath;
+            } else {
+                $tempBackupPath = null; // Échec de la copie, on continue normalement
+            }
+        }
+        
+        // Si le fichier temporaire n'est pas accessible et qu'on n'a pas de copie de sauvegarde
+        if (!file_exists($tempPath) || !is_readable($tempPath)) {
+            if ($tempBackupPath && file_exists($tempBackupPath)) {
+                // Utiliser notre copie de sauvegarde
+                $tempPath = $tempBackupPath;
+            } else {
+                throw MediaException::uploadFailed($file->getClientOriginalName(), 'Le fichier temporaire n\'existe pas ou n\'est pas lisible');
+            }
+        }
+
+        // Vérifier le type de fichier
+        if (!$this->isValidFileType($file)) {
+            $allowedTypes = [
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+                'application/pdf', 'text/plain', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/zip', 'application/x-rar-compressed'
+            ];
+            throw MediaException::invalidFileType(
+                $file->getClientOriginalName(),
+                $file->getMimeType() ?: 'unknown',
+                $allowedTypes
+            );
+        }
+
+        // Vérifier la taille du fichier
+        $maxSize = $this->getMaxFileSize();
+        if ($file->getSize() > $maxSize) {
+            throw MediaException::fileTooLarge($file->getClientOriginalName(), $file->getSize(), $maxSize);
+        }
+
         $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $safeFilename = $this->slugger->slug($originalFilename);
         $extension = $file->guessExtension();
+        
+        if (!$extension) {
+            throw MediaException::corruptedFile($file->getClientOriginalName());
+        }
+        
         $newFilename = $safeFilename . '-' . uniqid() . '.' . $extension;
         
         // Organiser par année/mois
@@ -35,17 +94,43 @@ class MediaManager
         $uploadPath = $this->uploadsDirectory . '/' . $yearMonth;
         
         if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
+            if (!mkdir($uploadPath, 0755, true)) {
+                throw MediaException::filePermissionDenied($uploadPath, 'création du répertoire');
+            }
         }
         
         try {
-            $file->move($uploadPath, $newFilename);
+            // Vérifier une dernière fois que le fichier est toujours accessible avant le transfert
+            if (!file_exists($tempPath) || !is_readable($tempPath)) {
+                throw MediaException::uploadFailed($file->getClientOriginalName(), 'Le fichier temporaire n\'est plus accessible avant le transfert');
+            }
+            
+            // Gérer le transfert final selon le type de fichier source
+            if ($tempBackupPath && $tempPath === $tempBackupPath) {
+                // Utiliser copy() pour la copie de sauvegarde
+                if (!copy($tempPath, $uploadPath . '/' . $newFilename)) {
+                    throw new \Exception('Échec de la copie du fichier de sauvegarde');
+                }
+            } else {
+                // Utiliser move() pour le fichier original
+                $file->move($uploadPath, $newFilename);
+            }
         } catch (\Exception $e) {
-            throw new \RuntimeException('Erreur lors de l\'upload du fichier: ' . $e->getMessage());
+            throw MediaException::uploadFailed($file->getClientOriginalName(), $e->getMessage(), $e);
+        } finally {
+            // Nettoyer le fichier de sauvegarde temporaire si il existe
+            if ($tempBackupPath && file_exists($tempBackupPath)) {
+                unlink($tempBackupPath);
+            }
         }
         
         $fullPath = $uploadPath . '/' . $newFilename;
         $relativePath = $yearMonth . '/' . $newFilename;
+        
+        // Vérifier que le fichier a bien été créé
+        if (!file_exists($fullPath)) {
+            throw MediaException::uploadFailed($file->getClientOriginalName(), 'Le fichier n\'a pas été créé sur le serveur');
+        }
         
         // Créer l'entité Media
         $media = new Media();
@@ -59,11 +144,23 @@ class MediaManager
         
         // Traitement spécifique aux images
         if ($this->isImage($file->getMimeType())) {
-            $this->processImage($fullPath, $media);
+            try {
+                $this->processImage($fullPath, $media);
+            } catch (\Exception $e) {
+                throw MediaException::imageProcessingError('traitement des métadonnées', $newFilename, $e);
+            }
         }
         
-        $this->entityManager->persist($media);
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->persist($media);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            // Nettoyer le fichier uploadé en cas d'erreur de base de données
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+            throw MediaException::uploadFailed($file->getClientOriginalName(), 'Erreur lors de l\'enregistrement en base : ' . $e->getMessage(), $e);
+        }
         
         return $media;
     }
@@ -86,25 +183,24 @@ class MediaManager
         return $uploadedMedias;
     }
     
-    public function deleteMedia(Media $media): bool
+    public function deleteMedia(Media $media): void
     {
-        try {
-            $fullPath = $this->uploadsDirectory . '/' . $media->getPath();
-            
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
+        $fullPath = $this->uploadsDirectory . '/' . $media->getPath();
+        
+        if (file_exists($fullPath)) {
+            if (!unlink($fullPath)) {
+                throw MediaException::filePermissionDenied($fullPath, 'suppression');
             }
-            
+        }
+        
+        try {
             // Supprimer les miniatures si elles existent
             $this->deleteThumbnails($media);
             
             $this->entityManager->remove($media);
             $this->entityManager->flush();
-            
-            return true;
         } catch (\Exception $e) {
-            error_log('Erreur suppression média: ' . $e->getMessage());
-            return false;
+            throw MediaException::uploadFailed($media->getOriginalName(), 'Erreur lors de la suppression : ' . $e->getMessage(), $e);
         }
     }
     
@@ -129,21 +225,24 @@ class MediaManager
         return $media;
     }
     
-    public function generateThumbnail(Media $media, int $width = 300, int $height = 300): ?string
+    public function generateThumbnail(Media $media, int $width = 300, int $height = 300): string
     {
         if (!$media->isImage()) {
-            return null;
+            throw MediaException::imageProcessingError('génération de miniature', $media->getFilename(), 
+                new \InvalidArgumentException('Le média n\'est pas une image'));
         }
         
         $sourcePath = $this->uploadsDirectory . '/' . $media->getPath();
         
         if (!file_exists($sourcePath)) {
-            return null;
+            throw MediaException::fileNotFound($sourcePath);
         }
         
         $thumbnailDir = $this->uploadsDirectory . '/thumbnails';
         if (!is_dir($thumbnailDir)) {
-            mkdir($thumbnailDir, 0755, true);
+            if (!mkdir($thumbnailDir, 0755, true)) {
+                throw MediaException::filePermissionDenied($thumbnailDir, 'création du répertoire');
+            }
         }
         
         $thumbnailFilename = pathinfo($media->getFilename(), PATHINFO_FILENAME) . 
@@ -159,6 +258,10 @@ class MediaManager
         try {
             $imageType = exif_imagetype($sourcePath);
             
+            if (!$imageType) {
+                throw MediaException::corruptedFile($media->getFilename());
+            }
+            
             switch ($imageType) {
                 case IMAGETYPE_JPEG:
                     $sourceImage = imagecreatefromjpeg($sourcePath);
@@ -173,11 +276,11 @@ class MediaManager
                     $sourceImage = imagecreatefromwebp($sourcePath);
                     break;
                 default:
-                    return null;
+                    throw MediaException::invalidFileType($media->getFilename(), 'image/' . image_type_to_extension($imageType, false));
             }
             
             if (!$sourceImage) {
-                return null;
+                throw MediaException::corruptedFile($media->getFilename());
             }
             
             $sourceWidth = imagesx($sourceImage);
@@ -191,6 +294,11 @@ class MediaManager
             // Créer la miniature
             $thumbnail = imagecreatetruecolor($newWidth, $newHeight);
             
+            if (!$thumbnail) {
+                imagedestroy($sourceImage);
+                throw MediaException::imageProcessingError('création de la miniature', $media->getFilename());
+            }
+            
             // Préserver la transparence pour PNG
             if ($imageType === IMAGETYPE_PNG) {
                 imagealphablending($thumbnail, false);
@@ -199,35 +307,45 @@ class MediaManager
                 imagefilledrectangle($thumbnail, 0, 0, $newWidth, $newHeight, $transparent);
             }
             
-            imagecopyresampled(
+            if (!imagecopyresampled(
                 $thumbnail, $sourceImage, 0, 0, 0, 0,
                 $newWidth, $newHeight, $sourceWidth, $sourceHeight
-            );
+            )) {
+                imagedestroy($sourceImage);
+                imagedestroy($thumbnail);
+                throw MediaException::imageProcessingError('redimensionnement', $media->getFilename());
+            }
             
             // Sauvegarder la miniature
+            $saved = false;
             switch ($imageType) {
                 case IMAGETYPE_JPEG:
-                    imagejpeg($thumbnail, $thumbnailPath, 85);
+                    $saved = imagejpeg($thumbnail, $thumbnailPath, 85);
                     break;
                 case IMAGETYPE_PNG:
-                    imagepng($thumbnail, $thumbnailPath);
+                    $saved = imagepng($thumbnail, $thumbnailPath);
                     break;
                 case IMAGETYPE_GIF:
-                    imagegif($thumbnail, $thumbnailPath);
+                    $saved = imagegif($thumbnail, $thumbnailPath);
                     break;
                 case IMAGETYPE_WEBP:
-                    imagewebp($thumbnail, $thumbnailPath, 85);
+                    $saved = imagewebp($thumbnail, $thumbnailPath, 85);
                     break;
             }
             
             imagedestroy($sourceImage);
             imagedestroy($thumbnail);
             
+            if (!$saved) {
+                throw MediaException::imageProcessingError('sauvegarde de la miniature', $media->getFilename());
+            }
+            
             return '/uploads/thumbnails/' . $thumbnailFilename;
             
+        } catch (MediaException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            error_log('Erreur génération miniature: ' . $e->getMessage());
-            return null;
+            throw MediaException::imageProcessingError('génération de miniature', $media->getFilename(), $e);
         }
     }
     

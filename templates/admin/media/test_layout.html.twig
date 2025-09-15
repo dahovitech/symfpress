@@ -1,0 +1,27 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Test Layout Médias{% endblock %}
+
+{% block page_title %}Test Layout Médias{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Test de l'interface admin</h5>
+            </div>
+            <div class="card-body">
+                <p>Cette page teste que la sidebar admin est bien visible.</p>
+                <p>Si vous voyez la sidebar à gauche avec le menu de navigation, alors le layout fonctionne correctement.</p>
+                <p>Si la sidebar n'est pas visible, alors il y a un problème avec le CSS ou la structure.</p>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Test réussi :</strong> Cette page utilise le même layout que l'interface media principale.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

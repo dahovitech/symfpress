@@ -1,217 +1,450 @@
 {% extends 'admin/base.html.twig' %}
 
-{% block title %}Modifier {{ media.originalName }} - Média{% endblock %}
+{% block title %}Modifier {{ media.originalName }}{% endblock %}
 
-{% block body %}
-<div class="container-fluid">
-    <!-- Navigation -->
-    <div class="mb-3">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ path('admin_media_index') }}">Bibliothèque média</a></li>
-                <li class="breadcrumb-item"><a href="{{ path('admin_media_show', {id: media.id}) }}">{{ media.originalName }}</a></li>
-                <li class="breadcrumb-item active">Édition</li>
-            </ol>
-        </nav>
-    </div>
+{% block page_title %}Modifier le média{% endblock %}
 
-    <!-- En-tête -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">✍️ Modifier "{{ media.originalName }}"</h1>
-        <div class="btn-group">
-            <a href="{{ path('admin_media_show', {id: media.id}) }}" class="btn btn-outline-secondary">
-                ← Retour
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* S'assurer que l'interface media respecte parfaitement la grid Bootstrap admin */
+        .admin-content {
+            overflow-x: hidden;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* S'assurer que la sidebar reste visible */
+        @media (min-width: 768px) {
+            .admin-sidebar {
+                display: block !important;
+                position: sticky !important;
+                top: 0 !important;
+                height: 100vh !important;
+                z-index: 100 !important;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ path('admin_media_index') }}" class="text-decoration-none">
+                <i class="fas fa-images me-1"></i>Médias
             </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ path('admin_media_show', {id: media.id}) }}" class="text-decoration-none">
+                {{ media.originalName }}
+            </a>
+        </li>
+        <li class="breadcrumb-item active">Modifier</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<!-- En-tête -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h4 mb-1">Modifier "{{ media.originalName }}"</h1>
+        <div class="text-muted">
+            <i class="fas fa-calendar me-1"></i>Ajouté le {{ media.createdAt|date('d/m/Y') }}
+            <span class="mx-2">•</span>
+            <i class="fas fa-hdd me-1"></i>{{ media.formattedFileSize }}
         </div>
     </div>
+    
+    <div class="btn-group">
+        <a href="{{ path('admin_media_show', {id: media.id}) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour
+        </a>
+    </div>
+</div>
 
-    <div class="row">
-        <!-- Formulaire d'édition -->
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">🏷️ Métadonnées du fichier</h5>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="mb-4">
-                            <label for="alt" class="form-label">
-                                <strong>Texte alternatif</strong>
-                                {% if media.isImage %}<span class="text-danger">*</span>{% endif %}
-                            </label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="alt" 
-                                   name="alt" 
-                                   value="{{ media.alt }}" 
-                                   placeholder="Description courte pour l'accessibilité"
-                                   {% if media.isImage %}required{% endif %}>
-                            <div class="form-text">
-                                {% if media.isImage %}
-                                    <i class="fas fa-info-circle text-primary"></i>
-                                    <strong>Obligatoire pour les images</strong> : Décrivez brièvement ce que représente l'image pour les lecteurs d'écran.
-                                {% else %}
-                                    Texte descriptif pour l'accessibilité (optionnel pour les documents).
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="caption" class="form-label"><strong>Légende</strong></label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="caption" 
-                                   name="caption" 
-                                   value="{{ media.caption }}" 
-                                   placeholder="Légende affichée sous le média">
-                            <div class="form-text">
-                                <i class="fas fa-info-circle text-info"></i>
-                                Légende qui sera affichée publiquement sous le média (optionnel).
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="description" class="form-label"><strong>Description</strong></label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description" 
-                                      rows="4" 
-                                      placeholder="Description détaillée du contenu du fichier">{{ media.description }}</textarea>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle text-secondary"></i>
-                                Description complète pour usage interne et référencement.
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save me-2"></i>Enregistrer les modifications
-                            </button>
-                            <a href="{{ path('admin_media_show', {id: media.id}) }}" class="btn btn-outline-secondary">
-                                Annuler
-                            </a>
-                        </div>
-                    </form>
-                </div>
+<div class="row">
+    <!-- Formulaire principal -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>Métadonnées du média
+                </h5>
             </div>
-            
-            <!-- Guide des bonnes pratiques -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">💡 Guide des bonnes pratiques</h5>
-                </div>
-                <div class="card-body">
-                    {% if media.isImage %}
-                    <h6 class="text-primary">Pour les images :</h6>
-                    <ul class="mb-3">
-                        <li><strong>Texte alternatif</strong> : Décrivez l'image en une phrase courte (ex: "Chat noir assis sur un canapé rouge")</li>
-                        <li><strong>Légende</strong> : Ajoutez un contexte si nécessaire (ex: "Photo prise lors de l'événement XYZ")</li>
-                        <li><strong>Mots-clés SEO</strong> : Incluez des termes pertinents dans la description</li>
-                    </ul>
-                    {% else %}
-                    <h6 class="text-info">Pour les documents :</h6>
-                    <ul class="mb-3">
-                        <li><strong>Description</strong> : Indiquez le contenu et l'usage du document</li>
-                        <li><strong>Mots-clés</strong> : Facilitez la recherche en ajoutant des termes pertinents</li>
-                        <li><strong>Version</strong> : Mentionnez la version ou la date si applicable</li>
-                    </ul>
-                    {% endif %}
-                    
-                    <div class="alert alert-info mb-0">
-                        <i class="fas fa-lightbulb me-2"></i>
-                        <strong>Astuce :</strong> Des métadonnées bien renseignées améliorent l'accessibilité, le référencement et facilitent la gestion de votre bibliothèque média.
+            <div class="card-body">
+                <form method="POST" id="edit-form">
+                    <div class="mb-4">
+                        <label for="alt" class="form-label fw-bold">
+                            Texte alternatif
+                            {% if media.isImage %}<span class="text-danger ms-1" title="Obligatoire pour les images">*</span>{% endif %}
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="alt" 
+                               name="alt" 
+                               value="{{ media.alt }}" 
+                               placeholder="Décrivez brièvement le contenu du média"
+                               {% if media.isImage %}required{% endif %}>
+                        <div class="form-text">
+                            {% if media.isImage %}
+                                <i class="fas fa-universal-access text-primary me-1"></i>
+                                <strong>Important pour l'accessibilité :</strong> Décrivez ce que représente l'image pour les personnes utilisant des lecteurs d'écran.
+                            {% else %}
+                                Description courte pour l'accessibilité (optionnel pour les documents).
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
+                    
+                    <div class="mb-4">
+                        <label for="caption" class="form-label fw-bold">Légende</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="caption" 
+                               name="caption" 
+                               value="{{ media.caption }}" 
+                               placeholder="Légende qui s'affichera sous le média">
+                        <div class="form-text">
+                            <i class="fas fa-eye text-info me-1"></i>
+                            Cette légende sera visible publiquement sous le média (optionnel).
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-bold">Description</label>
+                        <textarea class="form-control" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="4" 
+                                  placeholder="Description détaillée pour usage interne et référencement">{{ media.description }}</textarea>
+                        <div class="form-text">
+                            <i class="fas fa-search text-secondary me-1"></i>
+                            Description complète pour la recherche interne et l'optimisation SEO.
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                        </button>
+                        <a href="{{ path('admin_media_show', {id: media.id}) }}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
         
-        <!-- Aperçu et informations -->
-        <div class="col-lg-4">
-            <!-- Aperçu -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">👁️ Aperçu</h5>
+        <!-- Guide d'aide -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Conseils et bonnes pratiques
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if media.isImage %}
+                <div class="alert alert-info mb-3">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-image me-2"></i>Pour les images
+                    </h6>
+                    <ul class="mb-0">
+                        <li><strong>Texte alternatif :</strong> Soyez descriptif mais concis (ex: "Chat tigré dormant sur un coussin bleu")</li>
+                        <li><strong>Légende :</strong> Ajoutez du contexte si nécessaire (ex: "Photo prise lors de l'événement du 15 mars")</li>
+                        <li><strong>SEO :</strong> Incluez des mots-clés pertinents dans la description</li>
+                    </ul>
                 </div>
-                <div class="card-body text-center">
+                {% else %}
+                <div class="alert alert-secondary mb-3">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-file me-2"></i>Pour les documents
+                    </h6>
+                    <ul class="mb-0">
+                        <li><strong>Description :</strong> Indiquez le contenu et l'usage du document</li>
+                        <li><strong>Mots-clés :</strong> Facilitez la recherche avec des termes pertinents</li>
+                        <li><strong>Version :</strong> Mentionnez la version ou la date si applicable</li>
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <div class="alert alert-warning mb-0">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>À retenir
+                    </h6>
+                    <p class="mb-0">
+                        Des métadonnées bien renseignées améliorent l'accessibilité de votre site, 
+                        son référencement dans les moteurs de recherche et facilitent la gestion de votre bibliothèque média.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panneau latéral -->
+    <div class="col-lg-4">
+        <!-- Aperçu -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-eye me-2"></i>Aperçu
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="media-preview-container" style="max-height: 200px;">
                     {% if media.isImage %}
                         <img src="{{ media.url }}" 
                              class="img-fluid rounded" 
                              alt="{{ media.alt ?? media.originalName }}"
                              style="max-height: 200px;">
-                    {% elseif media.isPdf %}
-                        <i class="fas fa-file-pdf text-danger mb-2" style="font-size: 3rem;"></i>
-                        <p class="mb-0">Document PDF</p>
-                    {% elseif media.isVideo %}
-                        <i class="fas fa-file-video text-primary mb-2" style="font-size: 3rem;"></i>
-                        <p class="mb-0">Fichier vidéo</p>
-                    {% elseif media.isAudio %}
-                        <i class="fas fa-file-audio text-success mb-2" style="font-size: 3rem;"></i>
-                        <p class="mb-0">Fichier audio</p>
                     {% else %}
-                        <i class="fas fa-file text-secondary mb-2" style="font-size: 3rem;"></i>
-                        <p class="mb-0">Document</p>
+                        <div class="py-4">
+                            {% if media.isPdf %}
+                                <i class="fas fa-file-pdf text-danger mb-2" style="font-size: 3rem;"></i>
+                                <div class="small text-muted">Document PDF</div>
+                            {% elseif media.isVideo %}
+                                <i class="fas fa-file-video text-primary mb-2" style="font-size: 3rem;"></i>
+                                <div class="small text-muted">Fichier vidéo</div>
+                            {% elseif media.isAudio %}
+                                <i class="fas fa-file-audio text-success mb-2" style="font-size: 3rem;"></i>
+                                <div class="small text-muted">Fichier audio</div>
+                            {% else %}
+                                <i class="fas fa-file text-secondary mb-2" style="font-size: 3rem;"></i>
+                                <div class="small text-muted">Document</div>
+                            {% endif %}
+                        </div>
                     {% endif %}
                 </div>
             </div>
-            
-            <!-- Informations techniques -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5 class="mb-0">📈 Informations</h5>
-                </div>
-                <div class="card-body">
-                    <dl class="row small">
-                        <dt class="col-6">Nom original :</dt>
-                        <dd class="col-6">{{ media.originalName }}</dd>
-                        
-                        <dt class="col-6">Type :</dt>
-                        <dd class="col-6"><span class="badge bg-info">{{ media.mimeType }}</span></dd>
-                        
-                        <dt class="col-6">Taille :</dt>
-                        <dd class="col-6">{{ media.formattedFileSize }}</dd>
-                        
-                        {% if media.width and media.height %}
-                        <dt class="col-6">Dimensions :</dt>
-                        <dd class="col-6">{{ media.width }} x {{ media.height }}</dd>
-                        {% endif %}
-                        
-                        <dt class="col-6">Uploadé :</dt>
-                        <dd class="col-6">{{ media.createdAt|date('d/m/Y') }}</dd>
-                        
-                        <dt class="col-6">Par :</dt>
-                        <dd class="col-6">{{ media.uploadedBy.displayName }}</dd>
-                    </dl>
-                </div>
+        </div>
+        
+        <!-- Informations techniques -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informations
+                </h6>
             </div>
-            
-            <!-- Actions rapides -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5 class="mb-0">⚡ Actions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ media.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-external-link-alt me-2"></i>Ouvrir le fichier
-                        </a>
-                        <a href="{{ media.url }}" download class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-download me-2"></i>Télécharger
-                        </a>
-                        <button type="button" class="btn btn-outline-danger btn-sm" 
-                                onclick="deleteMedia({{ media.id }}, '{{ media.originalName|e('js') }}')">
-                            <i class="fas fa-trash me-2"></i>Supprimer
-                        </button>
-                    </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted" style="width: 45%;">Nom :</td>
+                        <td class="fw-bold">{{ media.originalName }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Type :</td>
+                        <td><span class="badge bg-light text-dark">{{ media.mimeType }}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Taille :</td>
+                        <td><strong>{{ media.formattedFileSize }}</strong></td>
+                    </tr>
+                    {% if media.width and media.height %}
+                    <tr>
+                        <td class="text-muted">Dimensions :</td>
+                        <td>{{ media.width }} × {{ media.height }} px</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td class="text-muted">Ajouté le :</td>
+                        <td>{{ media.createdAt|date('d/m/Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Par :</td>
+                        <td>{{ media.uploadedBy.displayName }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Actions rapides -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-tools me-2"></i>Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ media.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-external-link-alt me-2"></i>Ouvrir le fichier
+                    </a>
+                    <a href="{{ media.url }}" download class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-download me-2"></i>Télécharger
+                    </a>
+                    <hr class="my-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                            onclick="deleteMedia({{ media.id }}, '{{ media.originalName|e('js') }}')">
+                        <i class="fas fa-trash me-2"></i>Supprimer définitivement
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- JavaScript -->
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-borderless td {
+    padding: 0.4rem 0;
+    border: none;
+}
+
+.media-preview-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alert-heading {
+    margin-bottom: 0.5rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0.375rem !important;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-génération de suggestions pour le texte alt
+    const altInput = document.getElementById('alt');
+    const form = document.getElementById('edit-form');
+    
+    // Suggestion de texte alt si vide
+    if (!altInput.value.trim()) {
+        const originalName = '{{ media.originalName|e('js') }}';
+        const suggestion = generateAltSuggestion(originalName);
+        altInput.placeholder = `Suggestion : "${suggestion}"`;
+    }
+    
+    // Validation du formulaire
+    form.addEventListener('submit', function(e) {
+        const altValue = altInput.value.trim();
+        
+        {% if media.isImage %}
+        if (!altValue) {
+            e.preventDefault();
+            showNotification('Le texte alternatif est obligatoire pour les images', 'error');
+            altInput.focus();
+            return false;
+        }
+        {% endif %}
+        
+        // Afficher un état de chargement
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enregistrement...';
+        submitBtn.disabled = true;
+        
+        // Restaurer l'état original en cas d'erreur (le succès redirige)
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 5000);
+    });
+    
+    // Compteur de caractères pour la description
+    const descriptionTextarea = document.getElementById('description');
+    addCharacterCounter(descriptionTextarea, 500);
+    
+    // Auto-sauvegarde en brouillon (optionnel)
+    let saveTimeout;
+    [altInput, document.getElementById('caption'), descriptionTextarea].forEach(input => {
+        input.addEventListener('input', function() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                saveDraft();
+            }, 2000);
+        });
+    });
+});
+
+function generateAltSuggestion(filename) {
+    return filename
+        .replace(/\.[^/.]+$/, '') // Enlever l'extension
+        .replace(/[_-]/g, ' ') // Remplacer underscores et tirets par espaces
+        .replace(/([a-z])([A-Z])/g, '$1 $2') // Séparer camelCase
+        .toLowerCase()
+        .replace(/\b\w/g, l => l.toUpperCase()) // Capitaliser chaque mot
+        .trim();
+}
+
+function addCharacterCounter(textarea, maxLength) {
+    const counter = document.createElement('div');
+    counter.className = 'form-text text-end';
+    counter.innerHTML = `<small><span id="char-count">0</span>/${maxLength} caractères</small>`;
+    textarea.parentNode.appendChild(counter);
+    
+    const charCount = document.getElementById('char-count');
+    
+    function updateCounter() {
+        const length = textarea.value.length;
+        charCount.textContent = length;
+        
+        if (length > maxLength * 0.9) {
+            charCount.parentNode.classList.add('text-warning');
+        } else {
+            charCount.parentNode.classList.remove('text-warning');
+        }
+        
+        if (length > maxLength) {
+            charCount.parentNode.classList.add('text-danger');
+            charCount.parentNode.classList.remove('text-warning');
+        } else {
+            charCount.parentNode.classList.remove('text-danger');
+        }
+    }
+    
+    textarea.addEventListener('input', updateCounter);
+    updateCounter();
+}
+
+function saveDraft() {
+    // Sauvegarde automatique en brouillon (peut être implémentée côté serveur)
+    const formData = new FormData();
+    formData.append('alt', document.getElementById('alt').value);
+    formData.append('caption', document.getElementById('caption').value);
+    formData.append('description', document.getElementById('description').value);
+    formData.append('draft', 'true');
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    }).catch(() => {
+        // Ignore les erreurs de sauvegarde de brouillon
+    });
+}
+
 function deleteMedia(mediaId, mediaName) {
-    if (confirm(`Supprimer définitivement "${mediaName}" ?\n\nCette action est irréversible.`)) {
+    if (confirm(`Supprimer définitivement "${mediaName}" ?\n\nCette action est irréversible et supprimera également toutes les métadonnées associées.`)) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/admin/media/${mediaId}/delete`;
@@ -227,22 +460,25 @@ function deleteMedia(mediaId, mediaName) {
     }
 }
 
-// Auto-génération du texte alt à partir du nom de fichier si vide
-document.addEventListener('DOMContentLoaded', function() {
-    const altInput = document.getElementById('alt');
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : type === 'success' ? 'alert-success' : 'alert-info';
+    const iconClass = type === 'error' ? 'fa-exclamation-circle' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
     
-    if (!altInput.value.trim()) {
-        // Suggerer un texte alt basé sur le nom du fichier
-        const originalName = '{{ media.originalName }}';
-        const suggestion = originalName
-            .replace(/\.[^/.]+$/, '') // Enlever l'extension
-            .replace(/[_-]/g, ' ') // Remplacer underscores et tirets par espaces
-            .replace(/([a-z])([A-Z])/g, '$1 $2') // Séparer camelCase
-            .toLowerCase()
-            .replace(/\b\w/g, l => l.toUpperCase()); // Capitaliser
-        
-        altInput.placeholder = `Suggestion : "${suggestion}"`;
-    }
-});
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas ${iconClass} me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 4000);
+}
 </script>
 {% endblock %}

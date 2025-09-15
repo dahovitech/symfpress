@@ -1,0 +1,74 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Accueil - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <h1>Bienvenue sur SymfPress</h1>
+    
+    <div class="intro">
+        <p>Ceci est la page d'accueil du thème par défaut de SymfPress. Ce système de thèmes vous permet de personnaliser l'apparence de votre site facilement.</p>
+    </div>
+
+    {% if posts is defined and posts %}
+        <section class="latest-posts">
+            <h2>Derniers articles</h2>
+            {% for post in posts %}
+                <article class="post-preview" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+                    <h3>
+                        <a href="{{ path('frontend_post_show', {slug: post.slug}) }}" style="color: #007cba; text-decoration: none;">
+                            {{ post.title }}
+                        </a>
+                    </h3>
+                    
+                    {% if post.excerpt %}
+                        <p>{{ post.excerpt|raw }}</p>
+                    {% endif %}
+                    
+                    <div class="post-meta" style="color: #666; font-size: 0.9rem;">
+                        Publié le {{ post.publishedAt|date('d/m/Y') }}
+                        {% if post.author %}
+                            par {{ post.author.firstName }} {{ post.author.lastName }}
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </section>
+    {% else %}
+        <div class="no-content">
+            <h2>Aucun contenu pour le moment</h2>
+            <p>Le site est en cours de configuration. Revenez bientôt pour découvrir du nouveau contenu !</p>
+        </div>
+    {% endif %}
+
+    <div class="theme-info" style="background-color: #f0f8ff; padding: 1rem; margin-top: 2rem; border-radius: 4px;">
+        <h3>À propos de ce thème</h3>
+        <p>Vous utilisez actuellement le <strong>thème par défaut</strong> de SymfPress. Ce thème offre :</p>
+        <ul>
+            <li>Design responsive et moderne</li>
+            <li>Support des widgets et menus</li>
+            <li>Templates personnalisables</li>
+            <li>Optimisé pour le SEO</li>
+        </ul>
+        <p>Pour changer de thème, rendez-vous dans l'administration : <a href="/admin/extensions/themes">Gestion des thèmes</a></p>
+    </div>
+{% endblock %}
+
+{% block sidebar %}
+    <aside class="sidebar">
+        <div class="widget">
+            <h3>Navigation rapide</h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 0.5rem;"><a href="/">🏠 Accueil</a></li>
+                <li style="margin-bottom: 0.5rem;"><a href="/blog">📝 Blog</a></li>
+                <li style="margin-bottom: 0.5rem;"><a href="/admin" target="_blank">⚙️ Administration</a></li>
+            </ul>
+        </div>
+
+        <div class="widget" style="margin-top: 1rem;">
+            <h3>Informations</h3>
+            <p style="font-size: 0.9rem;">
+                Ce site utilise SymfPress, un CMS moderne basé sur Symfony avec un système de thèmes flexible.
+            </p>
+        </div>
+    </aside>
+{% endblock %}

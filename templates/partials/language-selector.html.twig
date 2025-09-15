@@ -1,0 +1,21 @@
+{#
+    Sélecteur de langue simple (dropdown)
+    Usage: {{ include('partials/language-selector.html.twig') }}
+#}
+{% if is_multilingual() %}
+    <div class="language-selector">
+        <select class="form-select form-select-sm" onchange="changeLanguage(this.value)" aria-label="Choisir une langue">
+            {% for language in get_available_languages() %}
+                <option value="{{ language.code }}" {% if language.id == get_current_language().id %}selected{% endif %}>
+                    {{ language.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <script>
+        function changeLanguage(languageCode) {
+            window.location.href = '{{ path('language_switch', {code: '__CODE__'}) }}'.replace('__CODE__', languageCode);
+        }
+    </script>
+{% endif %}

@@ -1,0 +1,24 @@
+{# templates/widgets/categories_widget.html.twig #}
+{# Widget des catégories #}
+
+{% extends 'widgets/base_widget.html.twig' %}
+
+{% block widget_content %}
+    {% if data.categories is defined and data.categories|length > 0 %}
+        <ul class="widget-categories">
+            {% for category in data.categories %}
+                <li class="category-item">
+                    <a href="{{ path('blog_category', {slug: category.slug}) }}" 
+                       class="category-link">
+                        <span class="category-name">{{ category.name }}</span>
+                        {% if data.show_count and category.postCount is defined %}
+                            <span class="category-count">({{ category.postCount }})</span>
+                        {% endif %}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="widget-empty">Aucune catégorie à afficher.</p>
+    {% endif %}
+{% endblock %}

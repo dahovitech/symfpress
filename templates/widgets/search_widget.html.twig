@@ -1,0 +1,21 @@
+{# templates/widgets/search_widget.html.twig #}
+{# Widget de recherche #}
+
+{% extends 'widgets/base_widget.html.twig' %}
+
+{% block widget_content %}
+    <form method="get" action="{{ path('blog_search') }}" class="widget-search-form">
+        <div class="search-input-group">
+            <input type="text" 
+                   name="q" 
+                   placeholder="{{ settings.placeholder|default('Rechercher...') }}" 
+                   value="{{ app.request.query.get('q') }}"
+                   class="search-input"
+                   required>
+            <button type="submit" class="search-button">
+                <span class="search-icon">🔍</span>
+                <span class="sr-only">Rechercher</span>
+            </button>
+        </div>
+    </form>
+{% endblock %}

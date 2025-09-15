@@ -1,0 +1,68 @@
+{# Template simple pour l'affichage des menus - Sans framework CSS #}
+{%- if menus is defined and menus|length > 0 -%}
+    <ul class="{{ options.menu_class|default('menu') }}">
+        {%- for menu in menus -%}
+            {%- if menu.isActive -%}
+                {{ _self.render_menu_item(menu, options, current_language, 0) }}
+            {%- endif -%}
+        {%- endfor -%}
+    </ul>
+{%- endif -%}
+
+{%- macro render_menu_item(menu, options, current_language, level) -%}
+    {%- set translation = menu.getTranslationForLanguage(current_language) -%}
+    {%- set title = translation ? translation.title : menu.getDisplayTitle(current_language) -%}
+    {%- set url = menu.getComputedUrl ?: '#' -%}
+    {%- set target = menu.target|default('_self') -%}
+    {%- set cssClass = menu.cssClass ?: '' -%}
+    
+    {# Vérifier s'il y a des sous-menus actifs #}
+    {%- set activeChildren = [] -%}
+    {%- for child in menu.children -%}
+        {%- if child.isActive -%}
+            {%- set activeChildren = activeChildren|merge([child]) -%}
+        {%- endif -%}
+    {%- endfor -%}
+    
+    {%- set hasChildren = activeChildren|length > 0 -%}
+    
+    {# Classes CSS pour l'élément de menu #}
+    {%- set itemClasses = [options.item_class|default('menu-item')] -%}
+    {%- set linkClasses = [options.link_class|default('menu-link')] -%}
+    
+    {%- if hasChildren -%}
+        {%- set itemClasses = itemClasses|merge(['has-submenu']) -%}
+    {%- endif -%}
+    
+    {%- if cssClass -%}
+        {%- set linkClasses = linkClasses|merge([cssClass]) -%}
+    {%- endif -%}
+    
+    {# Détecter si le lien est actif basé sur l'URL courante #}
+    {%- set isActive = false -%}
+    {%- if app.request.pathInfo == url -%}
+        {%- set isActive = true -%}
+        {%- set linkClasses = linkClasses|merge([options.active_class|default('active')]) -%}
+        {%- set itemClasses = itemClasses|merge(['current-menu-item']) -%}
+    {%- endif -%}
+
+    <li class="{{ itemClasses|join(' ') }}">
+        <a class="{{ linkClasses|join(' ') }}" 
+           href="{{ url }}" 
+           target="{{ target }}">
+            {{ title }}
+        </a>
+        
+        {%- if hasChildren -%}
+            <ul class="{{ options.submenu_class|default('submenu') }}">
+                {%- for child in activeChildren -%}
+                    {%- set childOptions = options|merge({
+                        'item_class': options.subitem_class|default('submenu-item'),
+                        'link_class': options.sublink_class|default('submenu-link')
+                    }) -%}
+                    {{ _self.render_menu_item(child, childOptions, current_language, level + 1) }}
+                {%- endfor -%}
+            </ul>
+        {%- endif -%}
+    </li>
+{%- endmacro -%}

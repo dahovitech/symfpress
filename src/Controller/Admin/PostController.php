@@ -165,12 +165,11 @@ class PostController extends AbstractController
 
     private function handleFormSubmission($form, Post $post, bool $isEdit): Response
     {
-        $data = $form->getData();
         $formData = $form->getExtraData();
         
         // Générer le slug si nouveau post et pas déjà défini
         if (!$isEdit && empty($post->getSlug()) && !empty($formData['translations_data'])) {
-            $currentLanguage = $this->languageService->detectLanguage($request);
+            $currentLanguage = $this->languageService->getCurrentLanguage();
             $translations = $formData['translations_data'];
             $title = $translations[$currentLanguage->getCode()]['title'] ?? 'nouveau-post';
             
@@ -209,7 +208,7 @@ class PostController extends AbstractController
     
     private function findOrCreateTag(string $name): Tag
     {
-        $currentLanguage = $this->languageService->detectLanguage($request);
+        $currentLanguage = $this->languageService->getCurrentLanguage();
         
         // Chercher un tag existant
         $tags = $this->tagRepository->searchTags($name);

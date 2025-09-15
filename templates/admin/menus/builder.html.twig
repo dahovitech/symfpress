@@ -213,7 +213,7 @@
             <div class="flex-grow-1">
                 <div class="d-flex align-items-center mb-2">
                     <i class="fas fa-grip-vertical menu-handle me-2"></i>
-                    <strong>{{ menu.getTranslationForLanguage(currentLanguage).title ?: 'Sans titre' }}</strong>
+                    <strong>{{ menu.getDisplayTitle(currentLanguage) }}</strong>
                     {% if not menu.isActive %}
                         <span class="badge bg-danger ms-2">Inactif</span>
                     {% endif %}
@@ -332,16 +332,24 @@ function createMenuItem(type, id, title) {
             [type + '_id']: id,
             'title': title,
             'location': '{{ location }}',
+            'is_active': true,
             '_token': '{{ csrf_token("menu_create") }}'
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            location.reload();
+            // Afficher un message de succès
+            showMessage('Élément de menu ajouté avec succès !', 'success');
+            // Recharger la page après un court délai
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('Erreur lors de la création de l\'élément de menu');
+            showMessage('Erreur lors de la création de l\'élément de menu: ' + (data.message || 'Erreur inconnue'), 'danger');
         }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showMessage('Erreur de connexion lors de la création de l\'élément', 'danger');
     });
 }
 
@@ -358,16 +366,22 @@ function createCustomMenuItem(title, url, target) {
             'url': url,
             'target': target,
             'location': '{{ location }}',
+            'is_active': true,
             '_token': '{{ csrf_token("menu_create") }}'
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            location.reload();
+            showMessage('Lien personnalisé ajouté avec succès !', 'success');
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('Erreur lors de la création du lien personnalisé');
+            showMessage('Erreur lors de la création du lien personnalisé: ' + (data.message || 'Erreur inconnue'), 'danger');
         }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showMessage('Erreur de connexion lors de la création du lien', 'danger');
     });
 }
 
@@ -439,19 +453,43 @@ function saveMenuOrder() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Afficher un message de succès
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-success alert-dismissible fade show';
-            alert.innerHTML = `
-                Ordre du menu sauvegardé avec succès !
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            document.querySelector('.admin-content').insertBefore(alert, document.querySelector('.admin-content').firstChild);
+            showMessage('Ordre du menu sauvegardé avec succès !', 'success');
         } else {
-            alert('Erreur lors de la sauvegarde de l\'ordre du menu');
+            showMessage('Erreur lors de la sauvegarde de l\'ordre du menu: ' + (data.message || 'Erreur inconnue'), 'danger');
         }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showMessage('Erreur de connexion lors de la sauvegarde', 'danger');
     });
+}
+
+function showMessage(message, type) {
+    // Supprimer les anciens messages
+    const existingMessages = document.querySelectorAll('.menu-builder-alert');
+    existingMessages.forEach(msg => msg.remove());
+
+    // Créer le nouveau message
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show menu-builder-alert`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    // Insérer le message
+    const contentArea = document.querySelector('.admin-content');
+    if (contentArea) {
+        contentArea.insertBefore(alert, contentArea.firstChild);
+    }
+
+    // Masquer automatiquement après 5 secondes
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 150);
+        }
+    }, 5000);
 }
 </script>
 {% endblock %}

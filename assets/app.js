@@ -1,6 +1,7 @@
 // assets/app.js
 import './styles/app.css';
 import './bootstrap';
+import './js/menu-manager.js';
 
 // Import Bootstrap JavaScript
 import 'bootstrap';

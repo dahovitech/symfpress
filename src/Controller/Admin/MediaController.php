@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/media', name: 'admin_media_')]
+#[Route('/admin/media', name: 'admin_media_')]
 #[IsGranted('ROLE_AUTHOR')]
 class MediaController extends AbstractController
 {
@@ -268,19 +268,54 @@ class MediaController extends AbstractController
         ]);
     }
 
+    #[Route('/selector/fragment', name: 'selector_fragment', methods: ['GET'])]
+    public function selectorFragment(Request $request): Response
+    {
+        $type = $request->query->get('type', 'all');
+        $multiple = $request->query->getBoolean('multiple', false);
+        
+        $queryBuilder = $this->mediaRepository->createQueryBuilder('m')
+            ->orderBy('m.createdAt', 'DESC')
+            ->setMaxResults(50);
+        
+        if ($type === 'images') {
+            $queryBuilder->andWhere('m.mimeType LIKE :imageType')
+                       ->setParameter('imageType', 'image/%');
+        }
+        
+        $medias = $queryBuilder->getQuery()->getResult();
+        
+        // Retourner seulement le fragment HTML sans layout
+        return $this->render('admin/media/selector_fragment.html.twig', [
+            'medias' => $medias,
+            'type' => $type,
+            'multiple' => $multiple
+        ]);
+    }
+
     #[Route('/thumbnail/{id}', name: 'thumbnail', methods: ['GET'], requirements: ['id' => '\\d+'])]
     public function thumbnail(Media $media, Request $request): Response
     {
         $width = (int) $request->query->get('w', 150);
         $height = (int) $request->query->get('h', 150);
         
-        $thumbnailUrl = $this->mediaManager->generateThumbnail($media, $width, $height);
+        // Limiter les dimensions pour éviter les abus
+        $width = min(max($width, 10), 800);
+        $height = min(max($height, 10), 800);
         
-        if (!$thumbnailUrl) {
-            throw $this->createNotFoundException('Impossible de générer la miniature.');
+        try {
+            $thumbnailUrl = $this->mediaManager->generateThumbnail($media, $width, $height);
+            
+            if (!$thumbnailUrl) {
+                // Retourner l'image originale si la miniature ne peut pas être générée
+                return $this->redirect($media->getUrl());
+            }
+            
+            return $this->redirect($thumbnailUrl);
+        } catch (\Exception $e) {
+            // En cas d'erreur, retourner l'image originale
+            return $this->redirect($media->getUrl());
         }
-        
-        return $this->redirect($thumbnailUrl);
     }
 
     #[Route('/library', name: 'library', methods: ['GET'])]
@@ -358,5 +393,11 @@ class MediaController extends AbstractController
         }
         
         return round($size, 2) . ' ' . $units[$unitIndex];
+    }
+
+    #[Route('/test-layout', name: 'test_layout', methods: ['GET'])]
+    public function testLayout(): Response
+    {
+        return $this->render('admin/media/test_layout.html.twig');
     }
 }

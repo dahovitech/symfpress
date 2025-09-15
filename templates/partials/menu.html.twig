@@ -1,0 +1,77 @@
+{# Template pour l'affichage des menus - Bootstrap 5 #}
+{%- if menus is defined and menus|length > 0 -%}
+    <ul class="{{ options.menu_class|default('navbar-nav') }}">
+        {%- for menu in menus -%}
+            {%- if menu.isActive -%}
+                {{ _self.render_menu_item(menu, options, current_language, 0) }}
+            {%- endif -%}
+        {%- endfor -%}
+    </ul>
+{%- endif -%}
+
+{%- macro render_menu_item(menu, options, current_language, level) -%}
+    {%- set translation = menu.getTranslationForLanguage(current_language) -%}
+    {%- set title = translation ? translation.title : menu.getDisplayTitle(current_language) -%}
+    {%- set url = menu.getComputedUrl ?: '#' -%}
+    {%- set target = menu.target|default('_self') -%}
+    {%- set cssClass = menu.cssClass ?: '' -%}
+    
+    {# Vérifier s'il y a des sous-menus actifs #}
+    {%- set activeChildren = [] -%}
+    {%- for child in menu.children -%}
+        {%- if child.isActive -%}
+            {%- set activeChildren = activeChildren|merge([child]) -%}
+        {%- endif -%}
+    {%- endfor -%}
+    
+    {%- set hasChildren = activeChildren|length > 0 -%}
+    
+    {# Classes CSS pour l'élément de menu #}
+    {%- set itemClasses = [options.item_class|default('nav-item')] -%}
+    {%- set linkClasses = [options.link_class|default('nav-link')] -%}
+    
+    {%- if hasChildren -%}
+        {%- set itemClasses = itemClasses|merge([options.dropdown_class|default('dropdown')]) -%}
+        {%- set linkClasses = linkClasses|merge(['dropdown-toggle']) -%}
+    {%- endif -%}
+    
+    {%- if cssClass -%}
+        {%- set linkClasses = linkClasses|merge([cssClass]) -%}
+    {%- endif -%}
+    
+    {# TODO: Détecter si le lien est actif basé sur l'URL courante #}
+    {%- set isActive = false -%}
+    {%- if app.request.pathInfo == url -%}
+        {%- set isActive = true -%}
+        {%- set linkClasses = linkClasses|merge([options.active_class|default('active')]) -%}
+    {%- endif -%}
+
+    <li class="{{ itemClasses|join(' ') }}">
+        {%- if hasChildren -%}
+            <a class="{{ linkClasses|join(' ') }}" 
+               href="{{ url }}" 
+               target="{{ target }}"
+               data-bs-toggle="dropdown" 
+               aria-expanded="false"
+               role="button">
+                {{ title }}
+            </a>
+            
+            <ul class="{{ options.dropdown_menu_class|default('dropdown-menu') }}">
+                {%- for child in activeChildren -%}
+                    {%- set childOptions = options|merge({
+                        'item_class': '',
+                        'link_class': options.dropdown_item_class|default('dropdown-item')
+                    }) -%}
+                    {{ _self.render_menu_item(child, childOptions, current_language, level + 1) }}
+                {%- endfor -%}
+            </ul>
+        {%- else -%}
+            <a class="{{ linkClasses|join(' ') }}" 
+               href="{{ url }}" 
+               target="{{ target }}">
+                {{ title }}
+            </a>
+        {%- endif -%}
+    </li>
+{%- endmacro -%}

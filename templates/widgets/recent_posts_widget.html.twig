@@ -1,0 +1,33 @@
+{# templates/widgets/recent_posts_widget.html.twig #}
+{# Widget des articles récents #}
+
+{% extends 'widgets/base_widget.html.twig' %}
+
+{% block widget_content %}
+    {% if data.posts is defined and data.posts|length > 0 %}
+        <ul class="widget-recent-posts">
+            {% for post in data.posts %}
+                <li class="recent-post-item">
+                    <a href="{{ path('blog_post_show', {slug: post.currentTranslation.slug}) }}" 
+                       class="recent-post-link">
+                        <span class="recent-post-title">{{ post.currentTranslation.title }}</span>
+                    </a>
+                    
+                    {% if data.show_date and post.publishedAt %}
+                        <time class="recent-post-date" datetime="{{ post.publishedAt|date('c') }}">
+                            {{ post.publishedAt|date('d/m/Y') }}
+                        </time>
+                    {% endif %}
+                    
+                    {% if data.show_excerpt and post.currentTranslation.excerpt %}
+                        <div class="recent-post-excerpt">
+                            {{ post.currentTranslation.excerpt|purify|slice(0, 100) }}...
+                        </div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="widget-empty">Aucun article récent à afficher.</p>
+    {% endif %}
+{% endblock %}

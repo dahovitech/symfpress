@@ -1,0 +1,115 @@
+{# templates/admin/widgets/zones.html.twig #}
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Zones de Widgets{% endblock %}
+
+{% block main_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-th-large me-2"></i>
+                    Gestion des Zones de Widgets
+                </h4>
+                <div>
+                    <a href="{{ path('admin_widget_zones_create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nouvelle Zone
+                    </a>
+                    <form method="post" action="{{ path('admin_widget_zones_initialize') }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-secondary" 
+                                onclick="return confirm('Initialiser les zones par défaut ?')">
+                            <i class="fas fa-magic"></i> Zones par Défaut
+                        </button>
+                    </form>
+                    <a href="{{ path('admin_widgets_index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-puzzle-piece"></i> Retour aux Widgets
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {# Barre de recherche #}
+                {% if zones|length > 5 %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <form method="get" class="d-flex">
+                            <input type="text" name="search" value="{{ search }}" 
+                                   placeholder="Rechercher des zones..." class="form-control me-2">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                {# Liste des zones #}
+                {% if zones|length > 0 %}
+                    <div class="row">
+                        {% for zone_data in zones %}
+                            {% set zone = zone_data[0] %}
+                            {% set widget_count = zone_data.widgetCount ?? 0 %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card h-100 {{ not zone.isActive ? 'bg-light' : '' }}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h5 class="card-title mb-0">{{ zone.title }}</h5>
+                                            <span class="badge {{ zone.isActive ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ zone.isActive ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="card-text text-muted small mb-2">
+                                            <code>{{ zone.name }}</code>
+                                        </p>
+                                        
+                                        {% if zone.description %}
+                                            <p class="card-text">{{ zone.description }}</p>
+                                        {% endif %}
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-puzzle-piece"></i>
+                                                {{ widget_count }} widget{{ widget_count > 1 ? 's' : '' }}
+                                            </small>
+                                            {% if zone.theme %}
+                                                <span class="badge bg-primary">{{ zone.theme }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Générique</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="text-center mt-3">
+                                            <a href="{{ path('admin_widgets_index', {zone: zone.name}) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-cog"></i> Gérer les Widgets
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-th-large fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Aucune zone de widgets trouvée</h5>
+                        <p class="text-muted">Créez vos premières zones pour organiser vos widgets.</p>
+                        <div>
+                            <a href="{{ path('admin_widget_zones_create') }}" class="btn btn-primary me-2">
+                                <i class="fas fa-plus"></i> Créer une Zone
+                            </a>
+                            <form method="post" action="{{ path('admin_widget_zones_initialize') }}" class="d-inline">
+                                <button type="submit" class="btn btn-outline-secondary">
+                                    <i class="fas fa-magic"></i> Initialiser les Zones par Défaut
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

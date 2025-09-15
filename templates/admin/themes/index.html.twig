@@ -1,0 +1,254 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Thèmes{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active">Thèmes</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gestion des Thèmes</h2>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary" onclick="location.reload()">
+            <i class="fas fa-sync"></i> Actualiser
+        </button>
+    </div>
+</div>
+
+<!-- Thème actif -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-paint-brush me-2"></i>Thème Actif</h5>
+    </div>
+    <div class="card-body">
+        {% if active_theme %}
+            {% for theme in themes %}
+                {% if theme.is_active %}
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="text-primary">{{ theme.info.name ?? theme.name|title }}</h4>
+                            <p class="text-muted mb-2">{{ theme.info.description ?? 'Aucune description disponible' }}</p>
+                            {% if theme.info.version %}
+                                <span class="badge bg-info">Version {{ theme.info.version }}</span>
+                            {% endif %}
+                            {% if theme.info.author %}
+                                <span class="badge bg-secondary">Par {{ theme.info.author }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if theme.screenshot %}
+                                <img src="{{ theme.screenshot }}" alt="Aperçu du thème" class="img-thumbnail" style="max-width: 150px; max-height: 100px;">
+                            {% else %}
+                                <div class="bg-light rounded p-3 text-center text-muted" style="width: 150px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-image fa-2x"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="text-center text-muted">
+                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                <h5>Aucun thème actif</h5>
+                <p>Sélectionnez un thème ci-dessous pour l'activer.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Statistiques -->
+{% if stats is defined %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-palette fa-2x text-primary mb-2"></i>
+                <h4>{{ stats.total ?? themes|length }}</h4>
+                <small class="text-muted">Thèmes disponibles</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h4>{{ stats.active ?? (active_theme ? 1 : 0) }}</h4>
+                <small class="text-muted">Thème actif</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-shield-alt fa-2x text-info mb-2"></i>
+                <h4>{{ stats.valid ?? themes|filter(t => t.is_valid)|length }}</h4>
+                <small class="text-muted">Thèmes valides</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                <h4>{{ stats.invalid ?? themes|filter(t => not t.is_valid)|length }}</h4>
+                <small class="text-muted">Thèmes invalides</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Liste des thèmes -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Thèmes Disponibles</h5>
+    </div>
+    <div class="card-body">
+        {% if themes is empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-palette fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun thème trouvé</h5>
+                <p class="text-muted">Installez des thèmes dans le dossier themes/.</p>
+            </div>
+        {% else %}
+            <div class="row">
+                {% for theme in themes %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 {{ theme.is_active ? 'border-primary' : '' }}">
+                            <div class="position-relative">
+                                {% if theme.screenshot %}
+                                    <img src="{{ theme.screenshot }}" class="card-img-top" alt="Aperçu" style="height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-image fa-3x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if theme.is_active %}
+                                    <span class="position-absolute top-0 end-0 badge bg-primary m-2">Actif</span>
+                                {% endif %}
+                                
+                                {% if not theme.is_valid %}
+                                    <span class="position-absolute top-0 start-0 badge bg-danger m-2">Invalide</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="card-body">
+                                <h5 class="card-title">{{ theme.info.name ?? theme.name|title }}</h5>
+                                <p class="card-text text-muted">
+                                    {{ theme.info.description ?? 'Aucune description disponible' }}
+                                </p>
+                                
+                                {% if theme.info.version or theme.info.author %}
+                                    <div class="mb-3">
+                                        {% if theme.info.version %}
+                                            <span class="badge bg-light text-dark me-1">v{{ theme.info.version }}</span>
+                                        {% endif %}
+                                        {% if theme.info.author %}
+                                            <span class="badge bg-light text-dark">{{ theme.info.author }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="card-footer">
+                                {% if theme.is_valid %}
+                                    {% if theme.is_active %}
+                                        <button class="btn btn-success w-100" disabled>
+                                            <i class="fas fa-check"></i> Thème Actif
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-primary w-100" 
+                                                onclick="activateTheme('{{ theme.name }}')">
+                                            <i class="fas fa-paint-brush"></i> Activer
+                                        </button>
+                                    {% endif %}
+                                {% else %}
+                                    <button class="btn btn-danger w-100" disabled>
+                                        <i class="fas fa-exclamation-triangle"></i> Thème Invalide
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de chargement -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mb-0">Activation du thème en cours...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.status-badge {
+    font-size: 0.75em;
+}
+</style>
+
+<script>
+function activateTheme(themeName) {
+    // Afficher le modal de chargement
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    // Faire la requête AJAX
+    fetch(`{{ path('admin_themes_activate', {'themeName': 'PLACEHOLDER'}) }}`.replace('PLACEHOLDER', themeName), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        
+        if (data.success) {
+            // Succès - recharger la page pour voir les changements
+            window.location.reload();
+        } else {
+            // Erreur
+            alert('Erreur lors de l\'activation du thème: ' + (data.message || 'Erreur inconnue'));
+        }
+    })
+    .catch(error => {
+        loadingModal.hide();
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'activation du thème');
+    });
+}
+
+// Ajouter l'effet hover sur les cartes
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.classList.add('card-hover');
+    });
+});
+</script>
+{% endblock %}

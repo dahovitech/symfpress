@@ -328,7 +328,10 @@ class Menu
         return $translation?->getTitle() ?? $this->generateDefaultTitle($language);
     }
 
-    private function generateDefaultTitle(Language $language): string
+    /**
+     * Génère un titre par défaut basé sur le type de menu et la langue
+     */
+    public function generateDefaultTitle(Language $language): string
     {
         return match($this->type) {
             self::TYPE_HOME => 'Accueil',

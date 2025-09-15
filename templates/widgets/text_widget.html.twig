@@ -1,0 +1,14 @@
+{# templates/widgets/text_widget.html.twig #}
+{# Widget de texte #}
+
+{% extends 'widgets/base_widget.html.twig' %}
+
+{% block widget_content %}
+    {% if widget.content %}
+        <div class="widget-text-content">
+            {{ widget.content|purify }}
+        </div>
+    {% else %}
+        <p class="widget-empty">Aucun contenu défini pour ce widget de texte.</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,24 @@
+# Routes pour la gestion des langues
+language_switch:
+    path: /language/switch/{code}
+    controller: App\Controller\LanguageController::switchLanguage
+    methods: [GET, POST]
+    requirements:
+        code: '[a-z]{2}'
+
+language_switch_ajax:
+    path: /language/switch-ajax/{code}
+    controller: App\Controller\LanguageController::switchLanguageAjax
+    methods: [POST]
+    requirements:
+        code: '[a-z]{2}'
+
+language_current:
+    path: /api/language/current
+    controller: App\Controller\LanguageController::getCurrentLanguage
+    methods: [GET]
+
+language_available:
+    path: /api/language/available
+    controller: App\Controller\LanguageController::getAvailableLanguages
+    methods: [GET]

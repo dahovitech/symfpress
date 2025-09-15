@@ -1,0 +1,10 @@
+{# templates/widgets/zone.html.twig #}
+{# Template pour rendre une zone complète de widgets #}
+
+{% if widget_count > 0 %}
+<div class="widget-zone widget-zone-{{ zone_name }}" data-zone="{{ zone_name }}">
+    {% for widget_html in widgets %}
+        {{ widget_html|raw }}
+    {% endfor %}
+</div>
+{% endif %}

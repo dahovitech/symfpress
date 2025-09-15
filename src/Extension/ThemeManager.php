@@ -4,27 +4,26 @@ namespace App\Extension;
 
 use App\Extension\Event\ThemeEvent;
 use App\Extension\Interface\ThemeInterface;
+use App\Service\TemplateResolver;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
 use Psr\Log\LoggerInterface;
-use Twig\Environment;
 
 /**
  * Gestionnaire des thèmes SymfPress
- * Système de thèmes inspiré de WordPress avec support Twig
+ * Système de thèmes inspiré de WordPress avec support Twig et persistance
  */
 class ThemeManager
 {
     private array $availableThemes = [];
-    private ?string $activeTheme = null;
     private string $themesDirectory;
     private array $themeMetadata = [];
     
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
         private LoggerInterface $logger,
-        private Environment $twig,
+        private TemplateResolver $templateResolver,
         string $projectDir
     ) {
         $this->themesDirectory = $projectDir . '/themes';
@@ -87,21 +86,33 @@ class ThemeManager
     public function activateTheme(string $themeName): bool
     {
         if (!isset($this->availableThemes[$themeName])) {
-            $this->logger->error("Thème {$themeName} non trouvé");
+            $this->logger->error("Thème {$themeName} non trouvé dans les thèmes disponibles: " . implode(', ', array_keys($this->availableThemes)));
+            return false;
+        }
+        
+        if (!isset($this->themeMetadata[$themeName])) {
+            $this->logger->error("Métadonnées du thème {$themeName} non trouvées");
             return false;
         }
         
         try {
             // Désactiver le thème actuel s'il y en a un
-            if ($this->activeTheme) {
+            $currentTheme = $this->getActiveTheme();
+            if ($currentTheme && $currentTheme !== $themeName) {
                 $this->deactivateCurrentTheme();
             }
             
-            $this->activeTheme = $themeName;
-            
-            // Ajouter le chemin du thème à Twig
+            // Vérifier que le thème a une structure valide
             $themePath = $this->availableThemes[$themeName];
-            $this->twig->getLoader()->addPath($themePath . '/templates', $themeName);
+            $templatesPath = $themePath . '/templates';
+            if (!is_dir($templatesPath)) {
+                throw new \Exception("Le répertoire de templates '{$templatesPath}' n'existe pas");
+            }
+            
+            // Utiliser le TemplateResolver pour activer le thème
+            if (!$this->templateResolver->setActiveTheme($themeName)) {
+                throw new \Exception("Impossible d'activer le thème via TemplateResolver");
+            }
             
             // Vérifier s'il y a un fichier de fonctions du thème
             $functionsFile = $themePath . '/functions.php';
@@ -127,17 +138,19 @@ class ThemeManager
      */
     public function deactivateCurrentTheme(): void
     {
-        if (!$this->activeTheme) {
+        $currentTheme = $this->getActiveTheme();
+        if (!$currentTheme) {
             return;
         }
         
         try {
             // Déclencher l'événement de désactivation
-            $event = new ThemeEvent($this->activeTheme, $this->themeMetadata[$this->activeTheme]);
-            $this->eventDispatcher->dispatch($event, 'theme.deactivated');
+            if (isset($this->themeMetadata[$currentTheme])) {
+                $event = new ThemeEvent($currentTheme, $this->themeMetadata[$currentTheme]);
+                $this->eventDispatcher->dispatch($event, 'theme.deactivated');
+            }
             
-            $this->logger->info("Thème {$this->activeTheme} désactivé");
-            $this->activeTheme = null;
+            $this->logger->info("Thème {$currentTheme} désactivé");
             
         } catch (\Exception $e) {
             $this->logger->error("Erreur lors de la désactivation du thème: " . $e->getMessage());
@@ -145,11 +158,11 @@ class ThemeManager
     }
     
     /**
-     * Retourne le thème actif
+     * Retourne le thème actif depuis le TemplateResolver
      */
     public function getActiveTheme(): ?string
     {
-        return $this->activeTheme;
+        return $this->templateResolver->getActiveTheme();
     }
     
     /**

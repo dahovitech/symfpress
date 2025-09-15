@@ -2,167 +2,277 @@
 
 {% block title %}Bibliothèque média{% endblock %}
 
-{% block body %}
-<div class="container-fluid">
-    <!-- En-tête avec statistiques -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">📁 Bibliothèque Média</h1>
-        <div class="d-flex gap-3 align-items-center">
-            <div class="badge-group">
-                <span class="badge bg-primary">📁 {{ stats.total_files }} fichiers</span>
-                <span class="badge bg-info">💾 {{ (stats.total_size / 1024 / 1024)|round(1) }} MB utilisés</span>
+{% block page_title %}Médias{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* S'assurer que l'interface media respecte parfaitement la grid Bootstrap admin */
+        
+        /* Force le respect de la grid Bootstrap */
+        .admin-content {
+            overflow-x: hidden;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Éviter que le contenu media déborde sur la sidebar */
+        .media-toolbar,
+        .media-grid,
+        .media-list,
+        .media-details-panel {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* S'assurer que la sidebar reste visible sur tous les écrans de taille adéquate */
+        @media (min-width: 768px) {
+            .admin-sidebar {
+                display: block !important;
+                position: sticky !important;
+                top: 0 !important;
+                height: 100vh !important;
+                z-index: 100 !important;
+            }
+            
+            /* Le contenu principal doit respecter la largeur de la grid */
+            .admin-content {
+                flex: 0 0 auto;
+                width: calc(100% - 16.666667%); /* Pour col-lg-10 */
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .admin-content {
+                width: calc(100% - 25%); /* Pour col-md-9 */
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block admin_content %}
+<!-- Barre d'outils supérieure style WordPress -->
+<div class="media-toolbar bg-white border rounded mb-3 p-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <!-- Filtres et recherche -->
+        <div class="d-flex align-items-center gap-3">
+            <form method="GET" class="d-flex align-items-center gap-2" id="media-filters">
+                <select name="type" id="type" class="form-select form-select-sm" style="width: auto;">
+                    <option value="all" {{ currentType == 'all' ? 'selected' : '' }}>Tous les médias</option>
+                    <option value="images" {{ currentType == 'images' ? 'selected' : '' }}>Images</option>
+                    <option value="documents" {{ currentType == 'documents' ? 'selected' : '' }}>Documents</option>
+                    <option value="videos" {{ currentType == 'videos' ? 'selected' : '' }}>Vidéos</option>
+                    <option value="audio" {{ currentType == 'audio' ? 'selected' : '' }}>Audio</option>
+                </select>
+                
+                <div class="position-relative">
+                    <i class="fas fa-search position-absolute" style="left: 8px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 0.8rem;"></i>
+                    <input type="text" name="search" id="search" class="form-control form-control-sm ps-4" 
+                           placeholder="Rechercher des médias..." value="{{ search }}" style="width: 250px;">
+                </div>
+                
+                <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
+                {% if currentType != 'all' or search %}
+                <a href="{{ path('admin_media_index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times"></i> Effacer
+                </a>
+                {% endif %}
+            </form>
+        </div>
+        
+        <!-- Actions et vue -->
+        <div class="d-flex align-items-center gap-2">
+            <!-- Sélection en masse -->
+            <div class="bulk-actions me-3" style="display: none;" id="bulk-actions">
+                <span class="text-muted me-2" id="selection-count">0 élément sélectionné</span>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="bulk-delete-btn">
+                    <i class="fas fa-trash me-1"></i>Supprimer
+                </button>
             </div>
-            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                <i class="fas fa-cloud-upload-alt me-2"></i>Uploader des fichiers
+            
+            <!-- Boutons de vue -->
+            <div class="btn-group me-3" role="group">
+                <button type="button" class="btn btn-sm btn-outline-secondary active" id="grid-view-btn" title="Vue grille">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="list-view-btn" title="Vue liste">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+            
+            <!-- Upload -->
+            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="fas fa-plus me-2"></i>Ajouter
             </button>
         </div>
     </div>
+    
+    <!-- Statistiques -->
+    <div class="d-flex align-items-center gap-4 mt-2 pt-2 border-top">
+        <small class="text-muted">
+            <i class="fas fa-images me-1"></i>{{ stats.total_files }} éléments
+        </small>
+        <small class="text-muted">
+            <i class="fas fa-hdd me-1"></i>{{ (stats.total_size / 1024 / 1024)|round(1) }} MB utilisés
+        </small>
+    </div>
+</div>
 
-    <!-- Filtres et recherche -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label for="type" class="form-label">Type de média</label>
-                    <select name="type" id="type" class="form-select">
-                        <option value="all" {{ currentType == 'all' ? 'selected' : '' }}>Tous les types</option>
-                        <option value="images" {{ currentType == 'images' ? 'selected' : '' }}>🖼️ Images</option>
-                        <option value="documents" {{ currentType == 'documents' ? 'selected' : '' }}>📄 Documents</option>
-                        <option value="videos" {{ currentType == 'videos' ? 'selected' : '' }}>🎥 Vidéos</option>
-                        <option value="audio" {{ currentType == 'audio' ? 'selected' : '' }}>🎧 Audio</option>
-                    </select>
+<!-- Interface principale style WordPress -->
+<div class="row">
+    <!-- Zone principale des médias -->
+    <div class="col-lg-8 col-xl-9" id="media-main">
+        {% if medias is empty %}
+            <!-- État vide -->
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-images text-muted" style="font-size: 4rem;"></i>
                 </div>
-                <div class="col-md-6">
-                    <label for="search" class="form-label">Rechercher</label>
-                    <input type="text" name="search" id="search" class="form-control" 
-                           placeholder="Nom du fichier, description, texte alternatif..." value="{{ search }}">
+                <h4 class="text-muted mb-3">Aucun média trouvé</h4>
+                <p class="text-muted mb-4">
+                    {% if currentType != 'all' or search %}
+                        Essayez de modifier vos critères de recherche.
+                    {% else %}
+                        Commencez par ajouter vos premiers fichiers média.
+                    {% endif %}
+                </p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="fas fa-plus me-2"></i>Ajouter des médias
+                </button>
+            </div>
+        {% else %}
+            <!-- Formulaire pour actions en masse -->
+            <form id="bulk-form" method="POST" action="{{ path('admin_media_bulk_delete') }}">
+                <!-- Vue grille (défaut) -->
+                <div id="grid-view" class="media-grid">
+                    <div class="row g-3">
+                        {% for media in medias %}
+                        <div class="col-xxl-2 col-xl-3 col-lg-4 col-md-3 col-sm-4 col-6">
+                            <div class="media-item position-relative" data-media-id="{{ media.id }}">
+                                <!-- Checkbox de sélection -->
+                                <div class="media-select position-absolute" style="top: 8px; left: 8px; z-index: 10;">
+                                    <input class="form-check-input media-checkbox" type="checkbox" 
+                                           name="selected_media[]" value="{{ media.id }}" 
+                                           style="transform: scale(1.2);">
+                                </div>
+                                
+                                <!-- Conteneur du média -->
+                                <div class="media-container bg-white border rounded shadow-sm overflow-hidden cursor-pointer"
+                                     onclick="selectMedia({{ media.id }})" style="aspect-ratio: 1; height: 150px;">
+                                    {% if media.isImage %}
+                                        {% set thumbnailUrl = path('admin_media_thumbnail', {'id': media.id, 'w': 150, 'h': 150}) %}
+                                        <img src="{{ thumbnailUrl }}" 
+                                             alt="{{ media.alt ?? media.originalName }}" 
+                                             class="w-100 h-100" 
+                                             style="object-fit: cover;"
+                                             onerror="this.onerror=null; this.src='{{ media.url }}';">
+                                    {% else %}
+                                        <div class="d-flex align-items-center justify-content-center h-100">
+                                            {% if media.isPdf %}
+                                                <i class="fas fa-file-pdf text-danger" style="font-size: 2rem;"></i>
+                                            {% elseif media.isVideo %}
+                                                <i class="fas fa-file-video text-primary" style="font-size: 2rem;"></i>
+                                            {% elseif media.isAudio %}
+                                                <i class="fas fa-file-audio text-success" style="font-size: 2rem;"></i>
+                                            {% else %}
+                                                <i class="fas fa-file text-secondary" style="font-size: 2rem;"></i>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Overlay pour sélection -->
+                                    <div class="media-overlay position-absolute top-0 start-0 w-100 h-100 bg-primary bg-opacity-25" 
+                                         style="display: none; z-index: 5;">
+                                        <div class="position-absolute top-50 start-50 translate-middle">
+                                            <i class="fas fa-check text-white" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Nom du fichier -->
+                                <div class="text-center mt-2">
+                                    <small class="text-muted d-block text-truncate" title="{{ media.originalName }}">
+                                        {{ media.originalName }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-fill">🔍 Filtrer</button>
-                        <a href="{{ path('admin_media_index') }}" class="btn btn-outline-secondary">Reset</a>
+                
+                <!-- Vue liste (cachée par défaut) -->
+                <div id="list-view" class="media-list" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="40">
+                                        <input class="form-check-input" type="checkbox" id="select-all-list">
+                                    </th>
+                                    <th width="60">Fichier</th>
+                                    <th>Nom</th>
+                                    <th>Type</th>
+                                    <th>Taille</th>
+                                    <th>Date</th>
+                                    <th width="100">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for media in medias %}
+                                <tr class="media-list-item" data-media-id="{{ media.id }}" onclick="selectMedia({{ media.id }})">
+                                    <td>
+                                        <input class="form-check-input media-checkbox" type="checkbox" 
+                                               name="selected_media[]" value="{{ media.id }}">
+                                    </td>
+                                    <td>
+                                        <div style="width: 40px; height: 40px;" class="d-flex align-items-center justify-content-center bg-light rounded">
+                                            {% if media.isImage %}
+                                                {% set thumbnailUrl = path('admin_media_thumbnail', {'id': media.id, 'w': 40, 'h': 40}) %}
+                                                <img src="{{ thumbnailUrl }}" class="w-100 h-100 rounded" style="object-fit: cover;"
+                                                     onerror="this.onerror=null; this.src='{{ media.url }}';">
+                                            {% else %}
+                                                {% if media.isPdf %}
+                                                    <i class="fas fa-file-pdf text-danger"></i>
+                                                {% elseif media.isVideo %}
+                                                    <i class="fas fa-file-video text-primary"></i>
+                                                {% elseif media.isAudio %}
+                                                    <i class="fas fa-file-audio text-success"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file text-secondary"></i>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong>{{ media.originalName }}</strong>
+                                        {% if media.alt %}
+                                            <br><small class="text-muted">{{ media.alt }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-light text-dark">{{ media.mimeType }}</span></td>
+                                    <td>{{ media.formattedFileSize }}</td>
+                                    <td>{{ media.createdAt|date('d/m/Y H:i') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); selectMedia({{ media.id }})" title="Détails">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-media-btn" 
+                                                    data-media-id="{{ media.id }}" data-media-name="{{ media.originalName }}"
+                                                    onclick="event.stopPropagation();" title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </form>
-        </div>
-    </div>
-
-    {% if medias is empty %}
-        <div class="text-center py-5">
-            <div class="mb-4">
-                <i class="fas fa-folder-open" style="font-size: 4rem; color: #6c757d;"></i>
-            </div>
-            <h4 class="text-muted">Aucun média trouvé</h4>
-            <p class="text-muted mb-4">
-                {% if currentType != 'all' or search %}
-                    Essayez de modifier vos critères de recherche.
-                {% else %}
-                    Commencez par uploader vos premiers fichiers.
-                {% endif %}
-            </p>
-            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                <i class="fas fa-cloud-upload-alt me-2"></i>Uploader des fichiers
-            </button>
-        </div>
-    {% else %}
-        <!-- Actions en masse -->
-        <form id="bulk-form" method="POST" action="{{ path('admin_media_bulk_delete') }}">
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="select-all">
-                                <label class="form-check-label" for="select-all">
-                                    <strong>Sélectionner tout</strong>
-                                </label>
-                                <small class="text-muted ms-3" id="selection-count">0 fichier(s) sélectionné(s)</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <button type="submit" class="btn btn-danger btn-sm" id="bulk-delete-btn" 
-                                    style="display: none;" 
-                                    onclick="return confirm('Supprimer définitivement les médias sélectionnés ?')">
-                                <i class="fas fa-trash me-1"></i>Supprimer la sélection
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Grille des médias -->
-            <div class="media-grid row g-3" id="media-grid">
-                {% for media in medias %}
-                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                    <div class="media-item card h-100" data-media-id="{{ media.id }}">
-                        <div class="position-relative">
-                            <!-- Checkbox de sélection -->
-                            <div class="position-absolute top-0 start-0 p-2">
-                                <input class="form-check-input media-checkbox" type="checkbox" 
-                                       name="selected_media[]" value="{{ media.id }}">
-                            </div>
-                            
-                            <!-- Aperçu du média -->
-                            <div class="media-preview" style="height: 150px; overflow: hidden;">
-                                {% if media.isImage %}
-                                    <img src="{{ media.url }}" 
-                                         alt="{{ media.alt ?? media.originalName }}" 
-                                         class="w-100 h-100" 
-                                         style="object-fit: cover; cursor: pointer;"
-                                         data-bs-toggle="modal" 
-                                         data-bs-target="#mediaModal"
-                                         data-media-id="{{ media.id }}">
-                                {% else %}
-                                    <div class="d-flex align-items-center justify-content-center h-100 bg-light file-icon"
-                                         style="cursor: pointer;"
-                                         data-bs-toggle="modal" 
-                                         data-bs-target="#mediaModal"
-                                         data-media-id="{{ media.id }}">
-                                        {% if media.isPdf %}
-                                            <i class="fas fa-file-pdf text-danger" style="font-size: 2.5rem;"></i>
-                                        {% elseif media.isVideo %}
-                                            <i class="fas fa-file-video text-primary" style="font-size: 2.5rem;"></i>
-                                        {% elseif media.isAudio %}
-                                            <i class="fas fa-file-audio text-success" style="font-size: 2.5rem;"></i>
-                                        {% else %}
-                                            <i class="fas fa-file text-secondary" style="font-size: 2.5rem;"></i>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- Informations du média -->
-                        <div class="card-body p-3">
-                            <h6 class="card-title mb-1" title="{{ media.originalName }}">
-                                {{ media.originalName|slice(0, 20) }}{% if media.originalName|length > 20 %}...{% endif %}
-                            </h6>
-                            <small class="text-muted d-block mb-2">
-                                {{ media.formattedFileSize }} • {{ media.createdAt|date('d/m/Y') }}
-                            </small>
-                            
-                            <!-- Actions rapides -->
-                            <div class="btn-group w-100" role="group">
-                                <a href="{{ path('admin_media_show', {id: media.id}) }}" 
-                                   class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ path('admin_media_edit', {id: media.id}) }}" 
-                                   class="btn btn-outline-secondary btn-sm">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button type="button" class="btn btn-outline-danger btn-sm delete-media-btn" 
-                                        data-media-id="{{ media.id }}" 
-                                        data-media-name="{{ media.originalName }}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </form>
+        {% endif %}
         
         <!-- Pagination -->
         {% if pagination.pages > 1 %}
@@ -173,7 +283,9 @@
                 {% if pagination.page > 1 %}
                     {% set currentParams = currentParams|merge({page: pagination.page - 1}) %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ path('admin_media_index', currentParams) }}">Précédent</a>
+                        <a class="page-link" href="{{ path('admin_media_index', currentParams) }}">
+                            <i class="fas fa-chevron-left"></i> Précédent
+                        </a>
                     </li>
                 {% endif %}
                 
@@ -187,57 +299,168 @@
                 {% if pagination.page < pagination.pages %}
                     {% set currentParams = currentParams|merge({page: pagination.page + 1}) %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ path('admin_media_index', currentParams) }}">Suivant</a>
+                        <a class="page-link" href="{{ path('admin_media_index', currentParams) }}">
+                            Suivant <i class="fas fa-chevron-right"></i>
+                        </a>
                     </li>
                 {% endif %}
             </ul>
         </nav>
         {% endif %}
-    {% endif %}
+    </div>
+    
+    <!-- Panneau latéral de détails style WordPress -->
+    <div class="col-lg-4 col-xl-3" id="media-sidebar">
+        <div class="media-details-panel bg-white border rounded p-3" style="position: sticky; top: 20px;">
+            <!-- État par défaut -->
+            <div id="no-selection" class="text-center py-5">
+                <i class="fas fa-mouse-pointer text-muted mb-3" style="font-size: 2.5rem;"></i>
+                <h6 class="text-muted">Sélectionnez un média</h6>
+                <p class="text-muted small mb-0">Cliquez sur un élément pour voir ses détails et options d'édition.</p>
+            </div>
+            
+            <!-- Détails du média sélectionné -->
+            <div id="media-details" style="display: none;">
+                <!-- En-tête -->
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="mb-0">Détails du média</h6>
+                        <button type="button" class="btn-close btn-sm" onclick="deselectMedia()" title="Fermer"></button>
+                    </div>
+                </div>
+                
+                <!-- Aperçu -->
+                <div class="text-center mb-3">
+                    <div id="detail-preview" class="media-detail-preview" style="max-height: 200px;">
+                        <!-- Contenu généré par JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Nom du fichier -->
+                <div class="mb-3">
+                    <strong id="detail-filename">Nom du fichier</strong>
+                    <div class="text-muted small" id="detail-date">Date</div>
+                </div>
+                
+                <!-- Actions rapides -->
+                <div class="d-grid gap-2 mb-4">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="editMedia()" id="edit-btn">
+                        <i class="fas fa-edit me-2"></i>Modifier
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="viewMedia()" id="view-btn">
+                        <i class="fas fa-external-link-alt me-2"></i>Voir
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteCurrentMedia()" id="delete-btn">
+                        <i class="fas fa-trash me-2"></i>Supprimer
+                    </button>
+                </div>
+                
+                <!-- Formulaire d'édition rapide -->
+                <form id="quick-edit-form" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label small"><strong>Texte alternatif</strong></label>
+                        <input type="text" class="form-control form-control-sm" id="edit-alt" placeholder="Décrivez brièvement le média">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small"><strong>Légende</strong></label>
+                        <input type="text" class="form-control form-control-sm" id="edit-caption" placeholder="Légende publique">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small"><strong>Description</strong></label>
+                        <textarea class="form-control form-control-sm" id="edit-description" rows="3" placeholder="Description détaillée"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success btn-sm" onclick="saveQuickEdit()">
+                            <i class="fas fa-save me-1"></i>Sauvegarder
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="cancelQuickEdit()">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Informations techniques -->
+                <div class="border-top pt-3">
+                    <h6 class="text-muted small mb-2">INFORMATIONS</h6>
+                    <div id="detail-info">
+                        <!-- Contenu généré par JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- URL et intégration -->
+                <div class="border-top pt-3 mt-3">
+                    <h6 class="text-muted small mb-2">INTÉGRATION</h6>
+                    <div class="mb-2">
+                        <label class="form-label small">URL du fichier</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" id="detail-url" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('detail-url')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Modal d'upload -->
+<!-- Modal d'upload moderne style WordPress -->
 <div class="modal fade" id="uploadModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">📁 Uploader des fichiers</h5>
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title">Ajouter des médias</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-0">
                 <!-- Zone de dépôt drag & drop -->
-                <div id="dropzone" class="border-dashed border-3 border-primary rounded p-5 text-center mb-3" 
-                     style="border-style: dashed !important; transition: all 0.3s;">
-                    <div id="dropzone-content">
-                        <i class="fas fa-cloud-upload-alt text-primary mb-3" style="font-size: 3rem;"></i>
-                        <h5 class="text-primary mb-2">Glissez-déposez vos fichiers ici</h5>
-                        <p class="text-muted mb-3">ou <button type="button" class="btn btn-link p-0 text-decoration-underline" id="browse-files">cliquez pour parcourir</button></p>
-                        <small class="text-muted">
-                            Types autorisés : Images (JPG, PNG, GIF, WebP), Documents (PDF, DOC, TXT), Archives (ZIP)<br>
-                            Taille max : {{ (maxFileSize / 1024 / 1024)|round(1) }} MB par fichier
-                        </small>
-                    </div>
-                    <div id="upload-progress" style="display: none;">
-                        <div class="progress mb-3">
-                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                <div id="upload-area" class="p-5">
+                    <div id="dropzone" class="border border-2 border-dashed rounded p-5 text-center position-relative" 
+                         style="border-color: #ddd !important; transition: all 0.3s;">
+                        <div id="dropzone-content">
+                            <div class="mb-3">
+                                <i class="fas fa-cloud-upload-alt text-primary" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="mb-2">Glissez-déposez vos fichiers ici</h5>
+                            <p class="text-muted mb-3">
+                                ou <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold" id="browse-files">parcourez votre ordinateur</button>
+                            </p>
+                            <div class="text-muted small">
+                                <div>Taille maximum par fichier : {{ (maxFileSize / 1024 / 1024)|round(1) }} MB</div>
+                                <div>Types acceptés : JPG, PNG, GIF, WebP, PDF, DOC, TXT, ZIP</div>
+                            </div>
                         </div>
-                        <p class="text-muted mb-0">Upload en cours...</p>
+                        
+                        <!-- Zone de progression -->
+                        <div id="upload-progress" style="display: none;">
+                            <div class="mb-3">
+                                <i class="fas fa-spinner fa-spin text-primary" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="mb-2">Upload en cours...</h5>
+                            <div class="progress mx-auto" style="width: 300px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <p class="text-muted mt-2 mb-0" id="upload-status">Préparation...</p>
+                        </div>
                     </div>
-                </div>
-                
-                <input type="file" id="file-input" multiple style="display: none;" 
-                       accept="image/*,.pdf,.doc,.docx,.txt,.zip">
-                
-                <!-- Liste des fichiers à uploader -->
-                <div id="file-list" style="display: none;">
-                    <h6>Fichiers sélectionnés :</h6>
-                    <div id="selected-files" class="list-group mb-3"></div>
+                    
+                    <!-- Input file caché -->
+                    <input type="file" id="file-input" multiple style="display: none;" 
+                           accept="image/*,.pdf,.doc,.docx,.txt,.zip">
+                    
+                    <!-- Liste des fichiers sélectionnés -->
+                    <div id="file-queue" class="mt-4" style="display: none;">
+                        <h6 class="border-bottom pb-2 mb-3">Fichiers à uploader</h6>
+                        <div id="file-list" class="d-flex flex-wrap gap-3"></div>
+                    </div>
                 </div>
                 
                 <!-- Résultats d'upload -->
-                <div id="upload-results" style="display: none;"></div>
+                <div id="upload-results" class="p-4 border-top" style="display: none;"></div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer border-top-0" id="upload-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                 <button type="button" class="btn btn-primary" id="start-upload" style="display: none;">
                     <i class="fas fa-upload me-2"></i>Commencer l'upload
@@ -247,81 +470,596 @@
     </div>
 </div>
 
-<!-- Modal de visualisation des médias -->
-<div class="modal fade" id="mediaModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Détail du média</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="mediaModalContent">
-                <!-- Contenu chargé dynamiquement -->
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- CSS personnalisé -->
+<!-- Styles CSS modernes style WordPress -->
 <style>
-.media-grid .media-item {
-    transition: transform 0.2s, box-shadow 0.2s;
+/* Interface principale */
+.media-toolbar {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Vue grille */
+.media-item {
+    transition: all 0.2s ease;
     cursor: pointer;
 }
 
-.media-grid .media-item:hover {
+.media-item:hover .media-container {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.media-preview img {
-    transition: transform 0.2s;
+.media-item.selected .media-container {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25) !important;
 }
 
-.media-preview:hover img {
-    transform: scale(1.05);
+.media-item.selected .media-overlay {
+    display: block !important;
 }
 
-.border-dashed {
-    border-style: dashed !important;
+.media-container {
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Vue liste */
+.media-list-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.media-list-item:hover {
+    background-color: #f8f9fa;
+}
+
+.media-list-item.selected {
+    background-color: #e3f2fd !important;
+}
+
+/* Panneau de détails */
+.media-details-panel {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.media-detail-preview {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.media-detail-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 4px;
+}
+
+/* Upload zone */
+#dropzone {
+    transition: all 0.3s ease;
+    background-color: #fafafa;
 }
 
 #dropzone.dragover {
+    border-color: #0d6efd !important;
     background-color: #e3f2fd;
-    border-color: #1976d2 !important;
     transform: scale(1.02);
 }
 
-.file-icon {
-    transition: transform 0.2s;
+.file-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
 }
 
-.file-icon:hover {
-    transform: scale(1.1);
+.file-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.badge-group .badge {
-    margin-right: 0.5rem;
+.file-preview .file-icon {
+    font-size: 1.5rem;
+    color: #6c757d;
+}
+
+.file-remove {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .media-details-panel {
+        position: fixed !important;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        height: 100vh;
+        z-index: 1050;
+        transition: right 0.3s ease;
+        border-radius: 0;
+    }
+    
+    .media-details-panel.show {
+        right: 0;
+    }
+    
+    .media-toolbar .d-flex {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+/* Boutons de vue */
+.btn-group .btn.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+/* État de chargement */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Badges de type */
+.type-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* Style des checkbox */
+.media-checkbox {
+    transform: scale(1.2);
+    border-radius: 3px;
+}
+
+/* Sélection multiple */
+.bulk-actions {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 8px 12px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pagination */
+.pagination .page-link {
+    border-radius: 6px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Tooltips */
+[title] {
+    cursor: help;
+}
+
+/* Forms dans le panneau */
+#quick-edit-form .form-control {
+    border-radius: 6px;
+}
+
+#quick-edit-form .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 4px;
+}
+
+/* États de focus */
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Actions dans la liste */
+.media-list .btn-group .btn {
+    border-radius: 4px;
+    margin: 0 1px;
+}
+
+/* Upload preview cards */
+.upload-file-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.upload-file-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.upload-file-card .progress {
+    height: 4px;
+    margin-top: 8px;
 }
 </style>
 
-<!-- JavaScript pour l'upload et les interactions -->
+<!-- JavaScript pour l'interface style WordPress -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales
+    let currentSelectedMedia = null;
+    let currentView = 'grid';
+    let filesToUpload = [];
+    
     // Éléments DOM
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    const gridViewBtn = document.getElementById('grid-view-btn');
+    const listViewBtn = document.getElementById('list-view-btn');
+    const mediaDetails = document.getElementById('media-details');
+    const noSelection = document.getElementById('no-selection');
+    const bulkActions = document.getElementById('bulk-actions');
+    const selectionCount = document.getElementById('selection-count');
+    const quickEditForm = document.getElementById('quick-edit-form');
+    
+    // Upload elements
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file-input');
     const browseBtn = document.getElementById('browse-files');
     const startUploadBtn = document.getElementById('start-upload');
+    const fileQueue = document.getElementById('file-queue');
     const fileList = document.getElementById('file-list');
-    const selectedFiles = document.getElementById('selected-files');
     const uploadProgress = document.getElementById('upload-progress');
     const dropzoneContent = document.getElementById('dropzone-content');
     const uploadResults = document.getElementById('upload-results');
     
-    let filesToUpload = [];
+    // Auto-submit des filtres
+    document.getElementById('type').addEventListener('change', function() {
+        document.getElementById('media-filters').submit();
+    });
     
-    // Gestion du drag & drop
+    // Recherche avec délai
+    let searchTimeout;
+    document.getElementById('search').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            document.getElementById('media-filters').submit();
+        }, 500);
+    });
+    
+    // Commutation de vue
+    gridViewBtn.addEventListener('click', function() {
+        switchView('grid');
+    });
+    
+    listViewBtn.addEventListener('click', function() {
+        switchView('list');
+    });
+    
+    function switchView(view) {
+        currentView = view;
+        
+        if (view === 'grid') {
+            gridView.style.display = 'block';
+            listView.style.display = 'none';
+            gridViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+        } else {
+            gridView.style.display = 'none';
+            listView.style.display = 'block';
+            listViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
+        }
+        
+        // Réappliquer la sélection actuelle
+        if (currentSelectedMedia) {
+            updateMediaSelection(currentSelectedMedia, true);
+        }
+    }
+    
+    // Gestion des sélections multiples
+    const checkboxes = document.querySelectorAll('.media-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            updateBulkSelection();
+        });
+    });
+    
+    // Sélection globale
+    const selectAllCheckbox = document.getElementById('select-all-list');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateBulkSelection();
+        });
+    }
+    
+    function updateBulkSelection() {
+        const selectedCheckboxes = document.querySelectorAll('.media-checkbox:checked');
+        const count = selectedCheckboxes.length;
+        
+        if (bulkActions) {
+            if (count > 0) {
+                bulkActions.style.display = 'flex';
+                selectionCount.textContent = `${count} élément${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`;
+            } else {
+                bulkActions.style.display = 'none';
+            }
+        }
+    }
+    
+    // Suppression en masse
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function() {
+            const selectedCheckboxes = document.querySelectorAll('.media-checkbox:checked');
+            if (selectedCheckboxes.length === 0) return;
+            
+            if (confirm(`Supprimer définitivement ${selectedCheckboxes.length} média(s) sélectionné(s) ?`)) {
+                document.getElementById('bulk-form').submit();
+            }
+        });
+    }
+    
+    // Gestion de la sélection de média
+    window.selectMedia = function(mediaId) {
+        // Déselectionner le précédent
+        if (currentSelectedMedia) {
+            updateMediaSelection(currentSelectedMedia, false);
+        }
+        
+        // Sélectionner le nouveau
+        currentSelectedMedia = mediaId;
+        updateMediaSelection(mediaId, true);
+        
+        // Afficher les détails
+        showMediaDetails(mediaId);
+    };
+    
+    function updateMediaSelection(mediaId, selected) {
+        const gridItem = document.querySelector(`#grid-view .media-item[data-media-id="${mediaId}"]`);
+        const listItem = document.querySelector(`#list-view .media-list-item[data-media-id="${mediaId}"]`);
+        
+        if (gridItem) {
+            if (selected) {
+                gridItem.classList.add('selected');
+            } else {
+                gridItem.classList.remove('selected');
+            }
+        }
+        
+        if (listItem) {
+            if (selected) {
+                listItem.classList.add('selected');
+            } else {
+                listItem.classList.remove('selected');
+            }
+        }
+    }
+    
+    window.deselectMedia = function() {
+        if (currentSelectedMedia) {
+            updateMediaSelection(currentSelectedMedia, false);
+            currentSelectedMedia = null;
+        }
+        
+        hideMediaDetails();
+    };
+    
+    function showMediaDetails(mediaId) {
+        // Masquer l'état vide
+        noSelection.style.display = 'none';
+        
+        // Charger les détails via AJAX
+        fetch(`/admin/media/${mediaId}/info`)
+            .then(response => response.json())
+            .then(data => {
+                populateMediaDetails(data);
+                mediaDetails.style.display = 'block';
+                mediaDetails.classList.add('fade-in');
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des détails:', error);
+                showError('Erreur lors du chargement des détails du média');
+            });
+    }
+    
+    function hideMediaDetails() {
+        mediaDetails.style.display = 'none';
+        noSelection.style.display = 'block';
+        quickEditForm.style.display = 'none';
+    }
+    
+    function populateMediaDetails(media) {
+        // Aperçu
+        const preview = document.getElementById('detail-preview');
+        if (media.isImage) {
+            preview.innerHTML = `<img src="${media.url}" alt="${media.alt || media.originalName}" class="img-fluid rounded">`;
+        } else {
+            let iconClass = 'fas fa-file text-secondary';
+            if (media.mimeType.startsWith('application/pdf')) iconClass = 'fas fa-file-pdf text-danger';
+            else if (media.mimeType.startsWith('video/')) iconClass = 'fas fa-file-video text-primary';
+            else if (media.mimeType.startsWith('audio/')) iconClass = 'fas fa-file-audio text-success';
+            
+            preview.innerHTML = `<i class="${iconClass}" style="font-size: 3rem;"></i>`;
+        }
+        
+        // Informations de base
+        document.getElementById('detail-filename').textContent = media.originalName;
+        document.getElementById('detail-date').textContent = `Ajouté le ${media.createdAt}`;
+        document.getElementById('detail-url').value = window.location.origin + media.url;
+        
+        // Informations techniques
+        const detailInfo = document.getElementById('detail-info');
+        let infoHtml = `
+            <div class="small mb-1"><strong>Type:</strong> ${media.mimeType}</div>
+            <div class="small mb-1"><strong>Taille:</strong> ${media.fileSize}</div>
+        `;
+        
+        if (media.isImage && media.width && media.height) {
+            infoHtml += `<div class="small mb-1"><strong>Dimensions:</strong> ${media.width} × ${media.height} pixels</div>`;
+        }
+        
+        detailInfo.innerHTML = infoHtml;
+        
+        // Préparer les valeurs pour l'édition
+        document.getElementById('edit-alt').value = media.alt || '';
+        document.getElementById('edit-caption').value = media.caption || '';
+        document.getElementById('edit-description').value = media.description || '';
+        
+        // Mettre à jour les liens d'action
+        document.getElementById('edit-btn').onclick = () => editMedia();
+        document.getElementById('view-btn').onclick = () => window.open(media.url, '_blank');
+        document.getElementById('delete-btn').onclick = () => deleteCurrentMedia();
+    }
+    
+    // Actions sur le média sélectionné
+    window.editMedia = function() {
+        quickEditForm.style.display = 'block';
+        document.getElementById('edit-alt').focus();
+    };
+    
+    window.cancelQuickEdit = function() {
+        quickEditForm.style.display = 'none';
+    };
+    
+    window.saveQuickEdit = function() {
+        const formData = new FormData();
+        formData.append('alt', document.getElementById('edit-alt').value);
+        formData.append('caption', document.getElementById('edit-caption').value);
+        formData.append('description', document.getElementById('edit-description').value);
+        
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sauvegarde...';
+        btn.disabled = true;
+        
+        fetch(`/admin/media/${currentSelectedMedia}/edit`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Média mis à jour avec succès');
+                quickEditForm.style.display = 'none';
+                // Recharger les détails
+                showMediaDetails(currentSelectedMedia);
+            } else {
+                showError('Erreur lors de la mise à jour');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showError('Erreur lors de la mise à jour');
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    };
+    
+    window.deleteCurrentMedia = function() {
+        if (!currentSelectedMedia) return;
+        
+        const filename = document.getElementById('detail-filename').textContent;
+        if (confirm(`Supprimer définitivement "${filename}" ?\n\nCette action est irréversible.`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/media/${currentSelectedMedia}/delete`;
+            
+            const token = document.createElement('input');
+            token.type = 'hidden';
+            token.name = '_token';
+            token.value = '{{ csrf_token("delete_media_") }}' + currentSelectedMedia;
+            
+            form.appendChild(token);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+    
+    // Gestion des suppressions individuelles
+    document.querySelectorAll('.delete-media-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const mediaId = this.dataset.mediaId;
+            const mediaName = this.dataset.mediaName;
+            
+            if (confirm(`Supprimer définitivement "${mediaName}" ?`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/media/${mediaId}/delete`;
+                
+                const token = document.createElement('input');
+                token.type = 'hidden';
+                token.name = '_token';
+                token.value = '{{ csrf_token("delete_media_") }}' + mediaId;
+                
+                form.appendChild(token);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+    
+    // === GESTION UPLOAD ===
+    
+    // Drag & Drop
     dropzone.addEventListener('dragover', function(e) {
         e.preventDefault();
         dropzone.classList.add('dragover');
@@ -329,7 +1067,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     dropzone.addEventListener('dragleave', function(e) {
         e.preventDefault();
-        dropzone.classList.remove('dragover');
+        if (!dropzone.contains(e.relatedTarget)) {
+            dropzone.classList.remove('dragover');
+        }
     });
     
     dropzone.addEventListener('drop', function(e) {
@@ -338,7 +1078,7 @@ document.addEventListener('DOMContentLoaded', function() {
         handleFiles(e.dataTransfer.files);
     });
     
-    // Clic pour parcourir
+    // Browse files
     browseBtn.addEventListener('click', function() {
         fileInput.click();
     });
@@ -347,37 +1087,46 @@ document.addEventListener('DOMContentLoaded', function() {
         handleFiles(this.files);
     });
     
-    // Fonction pour gérer les fichiers sélectionnés
     function handleFiles(files) {
         filesToUpload = Array.from(files);
-        displaySelectedFiles();
+        displayFileQueue();
     }
     
-    function displaySelectedFiles() {
-        selectedFiles.innerHTML = '';
+    function displayFileQueue() {
+        if (filesToUpload.length === 0) {
+            fileQueue.style.display = 'none';
+            startUploadBtn.style.display = 'none';
+            return;
+        }
+        
+        fileList.innerHTML = '';
         
         filesToUpload.forEach((file, index) => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'list-group-item d-flex justify-content-between align-items-center';
-            fileItem.innerHTML = `
-                <div>
-                    <strong>${file.name}</strong><br>
-                    <small class="text-muted">${formatFileSize(file.size)} • ${file.type}</small>
+            const fileCard = document.createElement('div');
+            fileCard.className = 'upload-file-card';
+            fileCard.innerHTML = `
+                <div class="file-preview mb-2">
+                    ${file.type.startsWith('image/') ? 
+                        `<img src="${URL.createObjectURL(file)}" alt="">` : 
+                        `<i class="file-icon fas fa-file"></i>`
+                    }
+                    <button type="button" class="file-remove" onclick="removeFile(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeFile(${index})">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="small fw-bold text-truncate" style="max-width: 80px;" title="${file.name}">${file.name}</div>
+                <div class="small text-muted">${formatFileSize(file.size)}</div>
             `;
-            selectedFiles.appendChild(fileItem);
+            fileList.appendChild(fileCard);
         });
         
-        fileList.style.display = filesToUpload.length > 0 ? 'block' : 'none';
-        startUploadBtn.style.display = filesToUpload.length > 0 ? 'inline-block' : 'none';
+        fileQueue.style.display = 'block';
+        startUploadBtn.style.display = 'inline-block';
     }
     
     window.removeFile = function(index) {
         filesToUpload.splice(index, 1);
-        displaySelectedFiles();
+        displayFileQueue();
     };
     
     function formatFileSize(size) {
@@ -390,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.round(size * 100) / 100 + ' ' + units[unitIndex];
     }
     
-    // Upload des fichiers
+    // Upload
     startUploadBtn.addEventListener('click', function() {
         if (filesToUpload.length === 0) return;
         
@@ -402,8 +1151,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Afficher la progression
         dropzoneContent.style.display = 'none';
         uploadProgress.style.display = 'block';
-        fileList.style.display = 'none';
+        fileQueue.style.display = 'none';
         startUploadBtn.style.display = 'none';
+        
+        document.getElementById('upload-status').textContent = 'Upload en cours...';
         
         fetch('{{ path('admin_media_upload') }}', {
             method: 'POST',
@@ -455,71 +1206,61 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Sélection multiple
-    const selectAll = document.getElementById('select-all');
-    const checkboxes = document.querySelectorAll('.media-checkbox');
-    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-    const selectionCount = document.getElementById('selection-count');
-    
-    selectAll.addEventListener('change', function() {
-        checkboxes.forEach(cb => cb.checked = this.checked);
-        updateSelectionUI();
+    // Reset modal on close
+    document.getElementById('uploadModal').addEventListener('hidden.bs.modal', function() {
+        dropzoneContent.style.display = 'block';
+        uploadProgress.style.display = 'none';
+        fileQueue.style.display = 'none';
+        uploadResults.style.display = 'none';
+        startUploadBtn.style.display = 'none';
+        filesToUpload = [];
+        fileInput.value = '';
     });
     
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', updateSelectionUI);
-    });
+    // Fonctions utilitaires
+    window.copyToClipboard = function(elementId) {
+        const element = document.getElementById(elementId);
+        element.select();
+        element.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        
+        showSuccess('Copié dans le presse-papiers');
+    };
     
-    function updateSelectionUI() {
-        const selectedCount = document.querySelectorAll('.media-checkbox:checked').length;
-        selectionCount.textContent = `${selectedCount} fichier(s) sélectionné(s)`;
-        bulkDeleteBtn.style.display = selectedCount > 0 ? 'inline-block' : 'none';
+    function showSuccess(message) {
+        // Simple notification (vous pouvez utiliser une librairie comme toastr)
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+            }
+        }, 3000);
     }
     
-    // Suppression individuelle
-    document.querySelectorAll('.delete-media-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const mediaId = this.dataset.mediaId;
-            const mediaName = this.dataset.mediaName;
-            
-            if (confirm(`Supprimer définitivement "${mediaName}" ?`)) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/admin/media/${mediaId}/delete`;
-                
-                const token = document.createElement('input');
-                token.type = 'hidden';
-                token.name = '_token';
-                token.value = '{{ csrf_token("delete_media_") }}' + mediaId;
-                
-                form.appendChild(token);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
-    });
-    
-    // Modal de visualisation
-    const mediaModal = document.getElementById('mediaModal');
-    mediaModal.addEventListener('show.bs.modal', function(event) {
-        const trigger = event.relatedTarget;
-        const mediaId = trigger.dataset.mediaId;
+    function showError(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
         
-        if (mediaId) {
-            fetch(`/admin/media/${mediaId}`)
-                .then(response => response.text())
-                .then(html => {
-                    // Extraire le contenu du body de la réponse
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const content = doc.querySelector('main .container-fluid');
-                    document.getElementById('mediaModalContent').innerHTML = content ? content.innerHTML : html;
-                })
-                .catch(error => {
-                    document.getElementById('mediaModalContent').innerHTML = '<div class="alert alert-danger">Erreur de chargement</div>';
-                });
-        }
-    });
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+            }
+        }, 5000);
+    }
 });
 </script>
 {% endblock %}

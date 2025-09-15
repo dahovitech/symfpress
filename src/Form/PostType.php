@@ -126,14 +126,15 @@ class PostType extends AbstractType
                 'choice_label' => 'originalName',
                 'query_builder' => function (EntityRepository $er) {
                     return $er->createQueryBuilder('m')
-                        ->where('m.type LIKE :type')
+                        ->where('m.mimeType LIKE :type')
                         ->setParameter('type', 'image/%')
-                        ->orderBy('m.uploadedAt', 'DESC');
+                        ->orderBy('m.createdAt', 'DESC');
                 },
                 'required' => false,
                 'placeholder' => 'Aucune image sélectionnée',
                 'attr' => [
-                    'class' => 'form-select'
+                    'class' => 'form-select media-selector',
+                    'data-media-type' => 'images'
                 ]
             ]);
 

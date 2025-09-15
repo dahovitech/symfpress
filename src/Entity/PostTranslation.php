@@ -6,6 +6,7 @@ use App\Repository\PostTranslationRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: PostTranslationRepository::class)]
 #[ORM\Table(name: 'post_translation')]
@@ -23,18 +24,52 @@ class PostTranslation
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(
+        max: 50000,
+        maxMessage: 'Le contenu ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Callback(callback: [self::class, 'validateHtmlContent'])]
     private ?string $content = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(
+        max: 1000,
+        maxMessage: 'L\'extrait ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Callback(callback: [self::class, 'validateHtmlContent'])]
     private ?string $excerpt = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: 'Le titre SEO ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(
+        pattern: '/^[^<>]*$/',
+        message: 'Le titre SEO ne peut pas contenir de balises HTML.'
+    )]
     private ?string $metaTitle = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(
+        max: 300,
+        maxMessage: 'La description SEO ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(
+        pattern: '/^[^<>]*$/',
+        message: 'La description SEO ne peut pas contenir de balises HTML.'
+    )]
     private ?string $metaDescription = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(
+        max: 500,
+        maxMessage: 'Les mots-clés SEO ne peuvent pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(
+        pattern: '/^[^<>]*$/',
+        message: 'Les mots-clés SEO ne peuvent pas contenir de balises HTML.'
+    )]
     private ?string $metaKeywords = null;
 
     #[ORM\ManyToOne(targetEntity: Post::class, inversedBy: 'translations')]
@@ -141,5 +176,46 @@ class PostTranslation
     public function __toString(): string
     {
         return sprintf('%s (%s)', $this->title ?? '', $this->language?->getCode() ?? '');
+    }
+
+    /**
+     * Valide que le contenu HTML est sécurisé
+     */
+    public static function validateHtmlContent($value, ExecutionContextInterface $context): void
+    {
+        if (empty($value)) {
+            return;
+        }
+
+        // Balises dangereuses interdites
+        $dangerousTags = [
+            'script', 'iframe', 'object', 'embed', 'form', 'input',
+            'button', 'select', 'textarea', 'meta', 'link', 'style',
+            'base', 'head', 'html', 'body'
+        ];
+
+        foreach ($dangerousTags as $tag) {
+            if (preg_match('/<\s*\/?\s*' . preg_quote($tag, '/') . '\b[^>]*>/i', $value)) {
+                $context->buildViolation(sprintf('La balise <%s> n\'est pas autorisée dans le contenu.', $tag))
+                    ->addViolation();
+                return;
+            }
+        }
+
+        // Vérification des attributs dangereux
+        $dangerousAttributes = ['onclick', 'onload', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onchange', 'onsubmit'];
+        foreach ($dangerousAttributes as $attr) {
+            if (preg_match('/\s' . preg_quote($attr, '/') . '\s*=/i', $value)) {
+                $context->buildViolation(sprintf('L\'attribut %s n\'est pas autorisé dans le contenu.', $attr))
+                    ->addViolation();
+                return;
+            }
+        }
+
+        // Vérification des protocoles dangereux dans les liens
+        if (preg_match('/(?:href|src)\s*=\s*["\']?(?:javascript|vbscript|data):/i', $value)) {
+            $context->buildViolation('Les protocoles javascript:, vbscript: et data: ne sont pas autorisés dans les liens.')
+                ->addViolation();
+        }
     }
 }

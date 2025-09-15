@@ -205,4 +205,184 @@
     </div>
 </div>
 
+<!-- Modal de sélection de médias -->
+<div class="modal fade" id="mediaModal" tabindex="-1" aria-labelledby="mediaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mediaModalLabel">Sélectionner un média</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Le contenu sera chargé dynamiquement via AJAX -->
+                <div class="text-center p-4">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Pages: Initialisation du sélecteur de médias');
+        
+        // Instance unique du modal Bootstrap (réutilisable)
+        const modalElement = document.getElementById('mediaModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const modalBody = document.querySelector('#mediaModal .modal-body');
+        const selectFeaturedImageBtn = document.querySelector('.btn-select-featured-image');
+        const removeFeaturedImageBtn = document.querySelector('.btn-remove-featured-image');
+        const featuredImageInput = document.querySelector('input[name="featured_image_id"]'); // Input hidden pour Pages
+        const imagePreview = document.querySelector('.featured-image-preview');
+        
+        console.log('Pages: Éléments trouvés - Bouton:', !!selectFeaturedImageBtn, 'Input:', !!featuredImageInput, 'Aperçu:', !!imagePreview);
+        
+        // Variable globale pour la communication avec le fragment
+        window.onMediaSelected = function(mediaId, mediaUrl, mediaTitle) {
+            console.log('Pages: Média sélectionné:', mediaId, mediaUrl, mediaTitle);
+            
+            // Mettre à jour l'input hidden
+            featuredImageInput.value = mediaId;
+            
+            // Mettre à jour l'aperçu
+            if (imagePreview) {
+                imagePreview.innerHTML = `
+                    <div class="border rounded p-2 d-flex align-items-center">
+                        <img src="${mediaUrl}" 
+                             alt="${mediaTitle || 'Image sélectionnée'}" 
+                             class="me-2" 
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                        <div>
+                            <div class="fw-bold">${mediaTitle || 'Image sélectionnée'}</div>
+                            <small class="text-muted">Image mise en avant</small>
+                        </div>
+                    </div>
+                `;
+                imagePreview.style.display = 'block';
+            }
+            
+            // Afficher le bouton de suppression
+            if (removeFeaturedImageBtn) {
+                removeFeaturedImageBtn.style.display = 'inline-block';
+            }
+            
+            // Changer le texte du bouton de sélection
+            if (selectFeaturedImageBtn) {
+                selectFeaturedImageBtn.textContent = 'Changer l\'image mise en avant';
+                selectFeaturedImageBtn.classList.remove('btn-primary');
+                selectFeaturedImageBtn.classList.add('btn-outline-primary');
+            }
+            
+            // Fermer le modal
+            modal.hide();
+            
+            console.log('Pages: Sélection terminée, interface mise à jour');
+        };
+        
+        // Event listener sur le bouton de sélection
+        if (selectFeaturedImageBtn) {
+            selectFeaturedImageBtn.addEventListener('click', function() {
+                console.log('Pages: Ouverture du sélecteur de médias');
+                
+                // Afficher le spinner de chargement
+                modalBody.innerHTML = '<div class="text-center p-4"><div class="spinner-border" role="status"><span class="visually-hidden">Chargement...</span></div></div>';
+                
+                // Charger le fragment de sélection via AJAX
+                fetch('{{ path('admin_media_selector_fragment', {'type': 'images'}) }}')
+                    .then(response => response.text())
+                    .then(html => {
+                        console.log('Pages: Contenu chargé, longueur:', html.length);
+                        
+                        // Injecter le contenu dans le modal
+                        modalBody.innerHTML = html;
+                        
+                        // ✅ SOLUTION : Attacher les event listeners APRÈS injection avec setTimeout
+                        setTimeout(function() {
+                            const mediaItems = modalBody.querySelectorAll('.media-selector-item');
+                            console.log('Pages: Event listeners à attacher:', mediaItems.length);
+                            
+                            mediaItems.forEach((item, index) => {
+                                item.addEventListener('click', function() {
+                                    const mediaId = this.dataset.mediaId;
+                                    const mediaUrl = this.dataset.mediaUrl || this.dataset.mediaThumbnailUrl;
+                                    const mediaTitle = this.dataset.mediaName || this.dataset.mediaAlt;
+                                    
+                                    console.log('Pages: Clic sur média:', mediaId, 'URL:', mediaUrl);
+                                    
+                                    // Appeler la fonction globale de sélection
+                                    if (typeof window.onMediaSelected === 'function') {
+                                        window.onMediaSelected(mediaId, mediaUrl, mediaTitle);
+                                    } else {
+                                        console.error('Pages: window.onMediaSelected non définie');
+                                    }
+                                });
+                                
+                                console.log('Pages: Event listener attaché à l\'item', index);
+                            });
+                        }, 100); // Délai pour s'assurer que le DOM est prêt après injection
+                    })
+                    .catch(error => {
+                        console.error('Pages: Erreur chargement médias:', error);
+                        modalBody.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement du sélecteur de médias</div>';
+                    });
+                
+                // Ouvrir le modal (instance unique)
+                modal.show();
+            });
+            
+            console.log('Pages: Event listener attaché au bouton de sélection');
+        } else {
+            console.error('Pages: Bouton de sélection non trouvé');
+        }
+        
+        // Event listener sur le bouton de suppression
+        if (removeFeaturedImageBtn) {
+            removeFeaturedImageBtn.addEventListener('click', function() {
+                console.log('Pages: Suppression de l\'image mise en avant');
+                
+                // Réinitialiser l'input hidden
+                featuredImageInput.value = '';
+                
+                // Masquer l'aperçu
+                if (imagePreview) {
+                    imagePreview.style.display = 'none';
+                }
+                
+                // Masquer le bouton de suppression
+                this.style.display = 'none';
+                
+                // Remettre le bouton de sélection en mode "Sélectionner"
+                if (selectFeaturedImageBtn) {
+                    selectFeaturedImageBtn.textContent = 'Sélectionner une image mise en avant';
+                    selectFeaturedImageBtn.classList.remove('btn-outline-primary');
+                    selectFeaturedImageBtn.classList.add('btn-primary');
+                }
+                
+                console.log('Pages: Image supprimée, interface réinitialisée');
+            });
+            
+            console.log('Pages: Event listener attaché au bouton de suppression');
+        }
+        
+        // Initialisation : masquer l'aperçu si pas d'image
+        const currentImageId = featuredImageInput.value;
+        if (!currentImageId) {
+            if (imagePreview) {
+                imagePreview.style.display = 'none';
+            }
+            if (removeFeaturedImageBtn) {
+                removeFeaturedImageBtn.style.display = 'none';
+            }
+        }
+        
+        console.log('Pages: Initialisation terminée avec succès');
+    });
+    </script>
 {% endblock %}

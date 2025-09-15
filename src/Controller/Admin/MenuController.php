@@ -105,7 +105,22 @@ class MenuController extends AbstractController
         }
         
         try {
-            $this->updateMenuOrder($data['items']);
+            // Traiter les éléments de menu
+            foreach ($data['items'] as $item) {
+                $menu = $this->menuRepository->find($item['id']);
+                if ($menu) {
+                    $menu->setMenuOrder($item['order']);
+                    
+                    // Gérer le parent
+                    if (isset($item['parent']) && $item['parent']) {
+                        $parent = $this->menuRepository->find($item['parent']);
+                        $menu->setParent($parent);
+                    } else {
+                        $menu->setParent(null);
+                    }
+                }
+            }
+            
             $this->entityManager->flush();
             
             return new JsonResponse(['success' => true]);
@@ -184,7 +199,7 @@ class MenuController extends AbstractController
         $menu->setTarget($data['target'] ?? '_self');
         $menu->setCssClass($data['css_class'] ?? null);
         $menu->setMenuOrder((int)($data['menu_order'] ?? 0));
-        $menu->setIsActive($data['is_active'] ?? true);
+        $menu->setIsActive(isset($data['is_active']) ? (bool)$data['is_active'] : true);
         
         // Parent menu
         if (!empty($data['parent_id'])) {
@@ -217,10 +232,25 @@ class MenuController extends AbstractController
         
         try {
             $this->menuRepository->save($menu, true);
-            $this->addFlash('success', $isEdit ? 'Élément de menu modifié avec succès.' : 'Élément de menu créé avec succès.');
             
+            // Gérer les requêtes AJAX
+            if ($request->isXmlHttpRequest()) {
+                return new JsonResponse([
+                    'success' => true, 
+                    'menu' => [
+                        'id' => $menu->getId(),
+                        'title' => $translation->getTitle()
+                    ]
+                ]);
+            }
+            
+            $this->addFlash('success', $isEdit ? 'Élément de menu modifié avec succès.' : 'Élément de menu créé avec succès.');
             return $this->redirectToRoute('admin_menus_edit', ['id' => $menu->getId()]);
         } catch (\Exception $e) {
+            if ($request->isXmlHttpRequest()) {
+                return new JsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            }
+            
             $this->addFlash('error', 'Erreur lors de la sauvegarde : ' . $e->getMessage());
             return $this->createOrEdit($request, $menu);
         }
@@ -268,10 +298,13 @@ class MenuController extends AbstractController
     private function updateMenuOrder(array $items, ?Menu $parent = null, int $order = 0): void
     {
         foreach ($items as $item) {
-            $menu = $this->menuRepository->find($item['id']);
+            $menuId = is_array($item) ? ($item['id'] ?? null) : null;
+            if (!$menuId) continue;
+            
+            $menu = $this->menuRepository->find($menuId);
             if ($menu) {
                 $menu->setParent($parent);
-                $menu->setMenuOrder($order++);
+                $menu->setMenuOrder($item['order'] ?? $order++);
                 
                 if (isset($item['children']) && !empty($item['children'])) {
                     $this->updateMenuOrder($item['children'], $menu, 0);
